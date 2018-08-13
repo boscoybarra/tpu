@@ -28,8 +28,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('mnist_train_data_file', '', 'Training .tfrecord data file')
 flags.DEFINE_string('mnist_test_data_file', '', 'Test .tfrecord data file')
 
-NUM_TRAIN_IMAGES = 60000
-NUM_EVAL_IMAGES = 10000
+# NUM_TRAIN_IMAGES = 60000
+# NUM_EVAL_IMAGES = 10000
 
 
 def parser(serialized_example):
@@ -42,10 +42,10 @@ def parser(serialized_example):
       })
   image = tf.decode_raw(features['image_raw'], tf.uint8)
   image.set_shape([28 * 28])
-  image = tf.reshape(image, [28, 28, 1])
+  image = tf.reshape(image, [28, 28, 3])
 
   # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+  image = tf.cast(image, tf.float32) * (2.0 / 255)
 
   label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
   return image, label
@@ -87,5 +87,5 @@ class InputFunction(object):
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
   array = array[:, :, 0]
-  img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='L')
+  img = Image.fromarray(np.uint8((array) / 2.0 * 255), mode='RGB')
   return img
