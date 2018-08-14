@@ -49,7 +49,7 @@ flags.DEFINE_string(
     'will attempt to automatically detect the GCE project from metadata.')
 
 # Model specific paramenters
-flags.DEFINE_string('dataset', 'mnist',
+flags.DEFINE_string('dataset', 'cifar',
                     'One of ["mnist", "cifar"]. Requires additional flags')
 flags.DEFINE_string('model_dir', '', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,

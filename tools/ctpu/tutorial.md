@@ -1,3 +1,5 @@
+# THIS SETUP IS FOR A LOCAL TERMINAL #
+
 # ctpu quickstart #
 
 ## Introduction ##
@@ -25,11 +27,37 @@ When you have the [project ID](https://support.google.com/cloud/answer/6158840)
 in hand (the "short name" found on the cloud console's main landing page), click
 "Continue" to get started!
 
-## Setup ##
+## Access your cloud-shell from your terminal ##
+```bash
+gcloud alpha cloud-shell ssh
+```
+
+## Setup##
 
 `ctpu` is pre-installed on your Google Cloud Shell. If you have previously
 downloaded `ctpu`, please delete it (`rm -f ~/ctpu`) to ensure you're using the
 most up-to-date version.
+
+### One Time Only: Configure Cloud Shell From Local Terminal###
+
+
+Login into your account to create an access token:
+
+```bash
+gcloud auth application-default login
+```
+
+Set credentials
+```bash
+GOOGLE_APPLICATION_CREDENTIALS="/tmp/tmp.XXXX/application_default_credentials.json"
+```
+
+Copy to .config
+
+```bash
+cp /tmp/tmp.XXXX/application_default_credentials.json ~/.config/gcloud/application_default_credentials.json
+```
+
 
 ### Configure Cloud Shell ###
 
@@ -75,7 +103,7 @@ It's now time to create your GCP resources.
 Launch your Cloud TPU flock by executing:
 
 ```bash
-ctpu up
+ctpu up --project $PROJECT_NAME
 ```
 
 This subcommand may take a few minutes to run. On your behalf, `ctpu` will:
@@ -196,7 +224,7 @@ TensorBoard in the background so you can visualize your training program's
 progress.
 
 ```bash
-tensorboard -logdir gs://$GCS_BUCKET_NAME/resnet &
+tensorboard -logdir gs://$GCS_BUCKET_NAME/dcgan &
 ```
 
 `ctpu` automatically set up special port forwarding for the Cloud Shell
@@ -219,9 +247,9 @@ model is pre-loaded on your Compute Engine VM.
 To start training ResNet-50, execute:
 
 ```bash
-python /usr/share/tpu/models/official/resnet/resnet_main.py \
+python ./tpu/models/experimental/dcgan/dcgan_main.py \
   --data_dir=gs://cloud-tpu-test-datasets/fake_imagenet \
-  --model_dir=gs://$GCS_BUCKET_NAME/resnet \
+  --model_dir=gs://$GCS_BUCKET_NAME/pics \
   --tpu=$TPU_NAME
 ```
 
