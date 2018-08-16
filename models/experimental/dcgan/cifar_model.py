@@ -83,7 +83,7 @@ def generator(x, is_training=True, scope='Generator'):
     x = _dense(x, 4096, name='g_fc1')
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn1'))
 
-    x = tf.reshape(x, [-1, 4, 4, 256])
+    # x = tf.reshape(x, [-1, 4, 4, 256])
 
     x = _deconv2d(x, 128, 5, 2, name='g_dconv2')
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn2'))
