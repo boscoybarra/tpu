@@ -51,7 +51,7 @@ flags.DEFINE_string(
 # Model specific paramenters
 flags.DEFINE_string('dataset', 'cifar',
                     'One of ["mnist", "cifar"]. Requires additional flags')
-flags.DEFINE_string('model_dir', '', 'Output model directory')
+flags.DEFINE_string('model_dir', 'gs://ptosis-test/model/dcgan', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,
                      'Number of dimensions for the noise vector')
 flags.DEFINE_integer('batch_size', 1024,
