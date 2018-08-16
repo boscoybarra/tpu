@@ -73,7 +73,7 @@ Therefore, for this tutorial you need to set the project environment variable
 with your [GCP Project ID](https://support.google.com/cloud/answer/6158840).
 
 ```bash
-export DEVSHELL_PROJECT_ID=<fill_in_your_project_id>
+gcloud config set --project $PROJECT_NAME
 ```
 
 You can view the configuration inferred by `ctpu` by executing:
