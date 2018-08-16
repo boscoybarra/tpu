@@ -97,7 +97,7 @@ def generator(x, is_training=True, scope='Generator'):
     print("HEELLOO 97",x)
     print("HEELLOO 98?",x.shape)
 
-    x = _deconv2d(x, 128, 5, 2, name='g_dconv2')
+    x = _deconv2d(x, 128, 5, 4, name='g_dconv2')
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn2'))
     print("HEELLOO 102",x)
     print("HEELLOO 103?",x.shape)
@@ -107,7 +107,7 @@ def generator(x, is_training=True, scope='Generator'):
     print("HEELLOO 107",x)
     print("HEELLOO 108?",x.shape)
 
-    x = _deconv2d(x, 3, 4, 4, name='g_dconv4')
+    x = _deconv2d(x, 3, 4, 2, name='g_dconv4')
     x = tf.tanh(x)
     print("HEELLOO 112",x)
     print("HEELLOO 113?",x.shape)
