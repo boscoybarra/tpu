@@ -36,7 +36,7 @@ def parser(serialized_example):
       serialized_example,
       features={
           'image': tf.FixedLenFeature([], tf.string),
-          # 'label': tf.FixedLenFeature([], tf.int64),
+          'label': tf.FixedLenFeature([], tf.int64),
       })
   image = tf.decode_raw(features['image'], tf.uint8)
   image.set_shape([3*64*64])
@@ -44,8 +44,8 @@ def parser(serialized_example):
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.reshape(image, [3, 64*64])
   # label = tf.cast(features['label'], tf.int32)
-  # return image, label
-  return image
+  return image, label
+  # return image
 
 
 class InputFunction(object):
@@ -64,8 +64,8 @@ class InputFunction(object):
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
     dataset = dataset.prefetch(2)
-    # images, labels = dataset.make_one_shot_iterator().get_next()
-    images = dataset.make_one_shot_iterator().get_next()
+    images, labels = dataset.make_one_shot_iterator().get_next()
+    # images = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
     images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -76,8 +76,8 @@ class InputFunction(object):
         'real_images': images,
         'random_noise': random_noise}
 
-    # return features, labels
-    return features
+    return features, labels
+    # return features
 
 
 def convert_array_to_image(array):
