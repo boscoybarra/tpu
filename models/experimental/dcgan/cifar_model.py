@@ -107,7 +107,7 @@ def generator(x, is_training=True, scope='Generator'):
     print("HEELLOO 107",x)
     print("HEELLOO 108?",x.shape)
 
-    x = _deconv2d(x, 3, 4, 1, name='g_dconv4')
+    x = _deconv2d(x, 3, 4, 4, name='g_dconv4')
     x = tf.tanh(x)
     print("HEELLOO 112",x)
     print("HEELLOO 113?",x.shape)
