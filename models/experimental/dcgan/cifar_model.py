@@ -60,7 +60,8 @@ def _deconv2d(x, filters, kernel_size, stride, name):
 
 def discriminator(x, is_training=True, scope='Discriminator'):
   with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-    print("HEELLOO?")
+    print("HEELLOO?",x)
+    print("HEELLOO 2?",x.shape)
     x = _conv2d(x, 64, 5, 2, name='d_conv1')
     x = _leaky_relu(x)
 
