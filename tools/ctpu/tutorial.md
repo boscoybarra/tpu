@@ -138,7 +138,7 @@ your Compute Engine VM. (Your shell prompt should change from `username@project`
 to `username@username`.) Verify TensorFlow is installed by executing:
 
 ```bash
-python -c "import tensorflow; print(tensorflow.__version__)"
+python3 -c "import tensorflow; print(tensorflow.__version__)"
 ```
 
 You should see a version number printed (e.g. `1.8.0`).
@@ -224,7 +224,7 @@ TensorBoard in the background so you can visualize your training program's
 progress.
 
 ```bash
-tensorboard -logdir gs://$GCS_BUCKET_NAME/dcgan &
+tensorboard -logdir gs://$GCS_BUCKET_NAME/cifar &
 ```
 
 `ctpu` automatically set up special port forwarding for the Cloud Shell
