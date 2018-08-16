@@ -71,7 +71,7 @@ class InputFunction(object):
     images = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
-    images = tf.transpose(tf.reshape(images, [batch_size, 64, 64, 3]))
+    images = tf.reshape(images, [batch_size, 64, 64, 3])
     print("HELLO line 74",images)
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
