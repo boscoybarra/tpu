@@ -41,10 +41,10 @@ def parser(serialized_example):
   image = tf.decode_raw(features['image'], tf.uint8)
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
-  # image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  print("HELLO line 46",image.shape)
-  # image = tf.reshape(image, [3, 64*64])
+  print("HELLO line 45",image.shape)
+  image = tf.reshape(image, [3, 64*64])
+  print("HELLO line 47",image.shape)
   # label = tf.cast(features['label'], tf.int32)
   # return image, label
   return image
