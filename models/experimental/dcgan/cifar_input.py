@@ -55,8 +55,11 @@ flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/*.jpg',
 def _parse_function(filename):
   image_string = tf.read_file(filename)
   image = tf.image.decode_jpeg(image_string)
+  print("L58",image)
+  print("L59",image.shape)
   # image = tf.image.resize_images(image_decoded, [64, 64])
   image.set_shape([3*64*64])
+  print("L62",image.shape)
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
