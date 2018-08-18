@@ -26,7 +26,7 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', '',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
                     'Path to CIFAR10 training data.')
 
 
@@ -50,7 +50,11 @@ class InputFunction(object):
       batch_size = params['batch_size']
       # A vector of filenames.
       # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
-      filenames = tf.constant([self.data_file])
+      with tf.gfile.GFile("gs://ptosis-test/data/img/*.jpg", "r") as f:
+        image_names = f.readlines()
+
+      filenames = tf.constant([image_names])
+      print(filenames)
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
       dataset = dataset.map(_parse_function)
@@ -71,6 +75,33 @@ class InputFunction(object):
 
       # return features
       return features
+
+
+  # def __call__(self, params):
+  #   # A vector of filenames.
+  #   batch_size = params['batch_size']
+  #   print("HELLO")
+  #   filenames = tf.constant(['./data/img/223680_64.jpg'])
+
+  #   dataset = tf.data.Dataset.from_tensor_slices((filenames))
+  #   dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
+  #   dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+  #   dataset = dataset.apply(
+  #       tf.data.Dataset.batch(batch_size))
+  #   dataset = dataset.prefetch(2)
+  #   images = dataset.make_one_shot_iterator().get_next()
+
+  #   # Reshape to give inputs statically known shapes.
+  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+  #   features = {
+  #       'real_images': images,
+  #       'random_noise': random_noise}
+
+  #   # return features, labels
+  #   return features
 
 
 def convert_array_to_image(array):
