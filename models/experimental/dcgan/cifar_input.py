@@ -52,6 +52,7 @@ class InputFunction(object):
       # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
       with tf.gfile.GFile("gs://ptosis-test/data/img/*.jpg", "r") as f:
         image_names = f.readlines()
+        print(image_names)
 
       filenames = tf.constant([image_names])
       print(filenames)
