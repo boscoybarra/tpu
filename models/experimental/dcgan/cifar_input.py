@@ -26,7 +26,7 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/*.jpg',
                     'Path to CIFAR10 training data.')
 
 
