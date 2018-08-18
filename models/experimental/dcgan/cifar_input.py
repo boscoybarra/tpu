@@ -78,7 +78,7 @@ class InputFunction(object):
     # A vector of filenames.
     batch_size = params['batch_size']
     print("HELLO")
-    filenames = tf.constant(['gs://ptosis-test/data/img/223680_64.jpg'])
+    filenames = tf.constant(['./data/img/223680_64.jpg'])
 
     dataset = tf.data.Dataset.from_tensor_slices((filenames))
     dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
