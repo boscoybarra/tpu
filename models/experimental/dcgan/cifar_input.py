@@ -26,7 +26,7 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
+flags.DEFINE_string('cifar_train_data_file', '',
                     'Path to CIFAR10 training data.')
 
 
@@ -44,7 +44,7 @@ class InputFunction(object):
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training else print("Not training"))
-    
+
 
   def __call__(self, params):
       # Batch size
