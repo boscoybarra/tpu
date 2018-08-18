@@ -44,9 +44,7 @@ class InputFunction(object):
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training else print("Not training"))
-    with tf.gfile.GFile("gs://ptosis-test/data/img/*.jpg", "r") as f:
-        image_names = f.readlines()
-        print(image_names)
+    
 
   def __call__(self, params):
       # Batch size
