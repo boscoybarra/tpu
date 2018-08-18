@@ -51,7 +51,7 @@ class InputFunction(object):
       batch_size = params['batch_size']
       # A vector of filenames.
       # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
-      filenames = tf.constant(tf.gfile.ListDirectory('gs://ptosis-test/data/img/'))
+      filenames = tf.constant(tf.gfile.ListDirectory('gs://ptosis-test/data/img2/'))
       print(filenames)
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
