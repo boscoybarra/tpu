@@ -275,7 +275,6 @@ def main(argv):
     img.save(file_obj, format='png')
     tf.logging.info('Finished generating images')
 
-
 if __name__ == '__main__':
   tf.logging.set_verbosity(tf.logging.INFO)
   tf.app.run(main)
