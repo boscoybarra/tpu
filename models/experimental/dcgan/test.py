@@ -2,7 +2,7 @@ import tensorflow as tf
 # with tf.gfile.GFile("gs://ptosis-test/data/img/", "r") as f:
 #         content = f.readlines()
 #         print(content)
-filename = "gs://ptosis-test/data/img/*.jpg"
+# filename = "gs://ptosis-test/data/img/*.jpg"
 
 def _get_unk_mapping(filename):
   """Reads a file that specifies a mapping from source to target tokens.
@@ -20,4 +20,4 @@ def _get_unk_mapping(filename):
     mapping = {k.strip(): v.strip() for k, v in mapping.items()}
   return mapping
 
-print(_get_unk_mapping(filename))
+print(_get_unk_mapping('ptosis-test/data/img/*.jpg'))
