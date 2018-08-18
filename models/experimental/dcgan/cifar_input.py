@@ -30,24 +30,37 @@ flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/',
                     'Path to CIFAR10 training data.')
 
 
-def parser(serialized_example):
-  """Parses a single tf.Example into image and label tensors."""
-  features = tf.parse_single_example(
-      serialized_example,
-      features={
-          'image': tf.FixedLenFeature([], tf.string),
-          # 'label': tf.FixedLenFeature([], tf.int64),
-      })
-  image = tf.decode_raw(features['image'], tf.uint8)
-  image.set_shape([3*64*64])
+# def parser(serialized_example):
+#   """Parses a single tf.Example into image and label tensors."""
+#   features = tf.parse_single_example(
+#       serialized_example,
+#       features={
+#           'image': tf.FixedLenFeature([], tf.string),
+#           # 'label': tf.FixedLenFeature([], tf.int64),
+#       })
+#   image = tf.decode_raw(features['image'], tf.uint8)
+#   image.set_shape([3*64*64])
+#   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
+#   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+#   print("HELLO line 45",image.shape)
+#   # image = tf.reshape(image, [3, 64*64])
+#   image = tf.transpose(tf.reshape(image, [3, 64*64]))
+#   print("HELLO line 47",image.shape)
+#   # label = tf.cast(features['label'], tf.int32)
+#   # return image, label
+#   return image
+
+# Reads an image from a file, decodes it into a dense tensor, and resizes it
+# to a fixed shape.
+def _parse_function(filename):
+  image_string = tf.read_file(filename)
+  image_decoded = tf.image.decode_jpeg(image_string)
+  image_resized = tf.image.resize_images(image_decoded, [64, 64])
+  image = image_resized
+  mage.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  print("HELLO line 45",image.shape)
-  # image = tf.reshape(image, [3, 64*64])
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
-  print("HELLO line 47",image.shape)
-  # label = tf.cast(features['label'], tf.int32)
-  # return image, label
   return image
 
 
@@ -60,19 +73,20 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file)
 
   def __call__(self, params):
+    # A vector of filenames.
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    filenames = tf.constant(["gs://ptosis-test/data/img/*.jpg"])
+
+    dataset = tf.data.Dataset.from_tensor_slices((filenames))
+    dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
+        tf.data.Dataset.batch(batch_size))
     dataset = dataset.prefetch(2)
-    # images, labels = dataset.make_one_shot_iterator().get_next()
     images = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
     images = tf.reshape(images, [batch_size, 64, 64, 3])
-    print("HELLO line 74",images)
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
