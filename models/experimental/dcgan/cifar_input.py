@@ -44,18 +44,16 @@ class InputFunction(object):
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training else print("Not training"))
+    with tf.gfile.GFile("gs://ptosis-test/data/img/*.jpg", "r") as f:
+        image_names = f.readlines()
+        print(image_names)
 
   def __call__(self, params):
       # Batch size
       batch_size = params['batch_size']
       # A vector of filenames.
       # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
-      with tf.gfile.GFile("gs://ptosis-test/data/img/*.jpg", "r") as f:
-        image_names = f.readlines()
-        print(image_names)
-
-      filenames = tf.constant([image_names])
-      print(filenames)
+      filenames = tf.constant([self.data_file])
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
       dataset = dataset.map(_parse_function)
