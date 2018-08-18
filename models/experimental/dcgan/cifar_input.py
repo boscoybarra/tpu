@@ -102,8 +102,7 @@ class InputFunction(object):
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
       dataset = dataset.map(_parse_function)
       dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-      dataset = dataset.apply(
-        dataset.batch(batch_size))
+      dataset = dataset.apply(dataset.batch(batch_size))
       dataset = dataset.prefetch(2)
       images = dataset.make_one_shot_iterator().get_next()
       print("L89",images)
