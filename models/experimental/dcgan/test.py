@@ -14,7 +14,7 @@ def _get_unk_mapping(filename):
   Returns:
     A dictionary that maps from source -> target tokens.
   """
-  with gfile.GFile(filename, "r") as mapping_file:
+  with tf.gfile.GFile(filename, "r") as mapping_file:
     lines = mapping_file.readlines()
     mapping = dict([_.split("\t")[0:2] for _ in lines])
     mapping = {k.strip(): v.strip() for k, v in mapping.items()}
