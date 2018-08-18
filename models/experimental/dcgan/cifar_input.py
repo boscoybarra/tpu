@@ -65,6 +65,11 @@ def _parse_function(filename):
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
   return image
 
+def _parse_function(filename):image_string = tf.read_file(filename)
+  image_decoded = tf.image.decode_jpeg(image_string)
+  image_resized = tf.image.resize_images(image_decoded, [28, 28])
+  return image_resized
+
 
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
@@ -75,30 +80,42 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file)
 
   def __call__(self, params):
-    # A vector of filenames.
-    batch_size = params['batch_size']
-    print("HELLO")
-    filenames = tf.constant(['./data/img/223680_64.jpg'])
+      # A vector of filenames.
+      filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
 
-    dataset = tf.data.Dataset.from_tensor_slices((filenames))
-    dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-    dataset = dataset.apply(
-        tf.data.Dataset.batch(batch_size))
-    dataset = dataset.prefetch(2)
-    images = dataset.make_one_shot_iterator().get_next()
+      dataset = tf.data.Dataset.from_tensor_slices((filenames))
+      dataset = dataset.map(_parse_function)
+      images = dataset.make_one_shot_iterator().get_next()
+      print("L89",images)
+      print("L90",images.shape)
 
-    # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
+      return images
 
-    random_noise = tf.random_normal([batch_size, self.noise_dim])
+  # def __call__(self, params):
+  #   # A vector of filenames.
+  #   batch_size = params['batch_size']
+  #   print("HELLO")
+  #   filenames = tf.constant(['./data/img/223680_64.jpg'])
 
-    features = {
-        'real_images': images,
-        'random_noise': random_noise}
+  #   dataset = tf.data.Dataset.from_tensor_slices((filenames))
+  #   dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
+  #   dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+  #   dataset = dataset.apply(
+  #       tf.data.Dataset.batch(batch_size))
+  #   dataset = dataset.prefetch(2)
+  #   images = dataset.make_one_shot_iterator().get_next()
 
-    # return features, labels
-    return features
+  #   # Reshape to give inputs statically known shapes.
+  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+  #   features = {
+  #       'real_images': images,
+  #       'random_noise': random_noise}
+
+  #   # return features, labels
+  #   return features
 
 
 def convert_array_to_image(array):
