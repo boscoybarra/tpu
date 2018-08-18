@@ -22,8 +22,6 @@ import tensorflow as tf
 
 # print(_get_unk_mapping('gs://ptosis-test/data/img/*.jpg'))
 
-def file_names(filename):
-    filenames = tf.gfile.ListDirectory(filename)
-    return filename
 
-print(file_names('gs://ptosis-test/data/img/'))
+name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
+print(name)
