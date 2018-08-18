@@ -69,6 +69,7 @@ def _parse_function(filename):
   image_string = tf.read_file(filename)
   image_decoded = tf.image.decode_jpeg(image_string)
   image_resized = tf.image.resize_images(image_decoded, [64, 64, 3])
+  print("L72", image_resized)
   return image_resized
 
 
