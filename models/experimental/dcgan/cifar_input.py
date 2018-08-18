@@ -94,8 +94,15 @@ class InputFunction(object):
       print("L90",images.shape)
       # Reshape to give inputs statically known shapes.
       images = tf.reshape(images, [batch_size, 64, 64, 3])
+      random_noise = tf.random_normal([batch_size, self.noise_dim])
 
-      return images
+      features = {
+          'real_images': images,
+          'random_noise': random_noise}
+
+      # return features
+      return features
+
 
   # def __call__(self, params):
   #   # A vector of filenames.
