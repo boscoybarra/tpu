@@ -26,7 +26,9 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/223680_64.jpg',
+# TODO: Pass to this flag list of image names such as what is going on in test.py
+# TODO: Maybe keep the path as flag and add the name along every iteration knowing the amount of images you have?
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
                     'Path to CIFAR10 training data.')
 
 
@@ -45,19 +47,12 @@ class InputFunction(object):
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training else print("Not training"))
 
-
   def __call__(self, params):
       # Batch size
       batch_size = params['batch_size']
-
-      # argv = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
-      # for filename in argv:
-      #   run_inference_on_file(filename)
       # A vector of filenames.
       # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
       filenames = tf.constant([self.data_file])
-      # filenames = tf.constant(tf.gfile.ListDirectory('gs://ptosis-test/data/img2/'))
-      print(filenames)
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
       dataset = dataset.map(_parse_function)
