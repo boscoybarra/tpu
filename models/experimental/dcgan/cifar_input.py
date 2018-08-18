@@ -82,6 +82,8 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file)
 
   def __call__(self, params):
+      # Batch size
+      batch_size = params['batch_size']
       # A vector of filenames.
       filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
 
@@ -90,6 +92,8 @@ class InputFunction(object):
       images = dataset.make_one_shot_iterator().get_next()
       print("L89",images)
       print("L90",images.shape)
+      # Reshape to give inputs statically known shapes.
+      images = tf.reshape(images, [batch_size, 64, 64, 3])
 
       return images
 
