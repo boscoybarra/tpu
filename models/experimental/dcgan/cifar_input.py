@@ -68,9 +68,9 @@ flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/*.jpg',
 def _parse_function(filename):
   image_string = tf.read_file(filename)
   image_decoded = tf.image.decode_jpeg(image_string)
-  image_resized = tf.image.resize_images(image_decoded, [64, 64, 3])
-  print("L72", image_resized)
-  return image_resized
+  # image_resized = tf.image.resize_images(image_decoded, [64, 64])
+  print("L72", image_decoded)
+  return image_decoded
 
 
 class InputFunction(object):
