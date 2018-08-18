@@ -36,34 +36,15 @@ flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_6
 #       serialized_example,
 #       features={
 #           'image': tf.FixedLenFeature([], tf.string),
-#           # 'label': tf.FixedLenFeature([], tf.int64),
+#           'label': tf.FixedLenFeature([], tf.int64),
 #       })
 #   image = tf.decode_raw(features['image'], tf.uint8)
-#   image.set_shape([3*64*64])
+#   image.set_shape([3*32*32])
 #   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
 #   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-#   print("HELLO line 45",image.shape)
-#   # image = tf.reshape(image, [3, 64*64])
-#   image = tf.transpose(tf.reshape(image, [3, 64*64]))
-#   print("HELLO line 47",image.shape)
-#   # label = tf.cast(features['label'], tf.int32)
-#   # return image, label
-#   return image
-
-# Reads an image from a file, decodes it into a dense tensor, and resizes it
-# to a fixed shape.
-# def _parse_function(filename):
-#   image_string = tf.read_file(filename)
-#   image = tf.image.decode_jpeg(image_string)
-#   print("L58",image)
-#   print("L59",image.shape)
-#   # image = tf.image.resize_images(image_decoded, [64, 64])
-#   image.set_shape([3*64*64])
-#   print("L62",image.shape)
-#   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
-#   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-#   image = tf.transpose(tf.reshape(image, [3, 64*64]))
-#   return image
+#   image = tf.transpose(tf.reshape(image, [3, 32*32]))
+#   label = tf.cast(features['label'], tf.int32)
+#   return image, label
 
 def _parse_function(filename):
   image_string = tf.read_file(filename)
@@ -72,6 +53,36 @@ def _parse_function(filename):
   print("L72", image_resized)
   return image_resized
 
+# class InputFunction(object):
+#   """Wrapper class that is passed as callable to Estimator."""
+
+#   def __init__(self, is_training, noise_dim):
+#     self.is_training = is_training
+#     self.noise_dim = noise_dim
+#     self.data_file = (FLAGS.cifar_train_data_file if is_training
+#                       else FLAGS.cifar_test_data_file)
+
+#   def __call__(self, params):
+#     batch_size = params['batch_size']
+#     dataset = tf.data.TFRecordDataset([self.data_file])
+#     dataset = dataset.map(parser, num_parallel_calls=batch_size)
+#     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+#     dataset = dataset.apply(
+#         tf.contrib.data.batch_and_drop_remainder(batch_size))
+#     dataset = dataset.prefetch(2)
+#     images, labels = dataset.make_one_shot_iterator().get_next()
+
+#     # Reshape to give inputs statically known shapes.
+#     images = tf.reshape(images, [batch_size, 32, 32, 3])
+
+#     random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+#     features = {
+#         'real_images': images,
+#         'random_noise': random_noise}
+
+#     return features, labels
+
 
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
@@ -79,7 +90,7 @@ class InputFunction(object):
   def __init__(self, is_training, noise_dim):
     self.is_training = is_training
     self.noise_dim = noise_dim
-    self.data_file = FLAGS.cifar_train_data_file
+    self.data_file = FLAGS.cifar_train_data_file if is_training
 
   def __call__(self, params):
       # Batch size
