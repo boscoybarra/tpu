@@ -91,7 +91,7 @@ class InputFunction(object):
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
-                      else pass)
+      else pass)
 
   def __call__(self, params):
       # Batch size
