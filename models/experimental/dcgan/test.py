@@ -20,4 +20,4 @@ def _get_unk_mapping(filename):
     mapping = {k.strip(): v.strip() for k, v in mapping.items()}
   return mapping
 
-print(_get_unk_mapping('ptosis-test/data/img/*.jpg'))
+print(_get_unk_mapping('gs://ptosis-test/data/img/*.jpg'))
