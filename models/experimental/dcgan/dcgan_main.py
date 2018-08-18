@@ -75,9 +75,9 @@ dataset = None
 model = None
 
 
-def model_fn(features, mode, params):
+def model_fn(features, labels, mode, params):
   """Constructs DCGAN from individual generator and discriminator networks."""
-  # del labels    # Unconditional GAN does not use labels
+  del labels    # Unconditional GAN does not use labels
 
   if mode == tf.estimator.ModeKeys.PREDICT:
     ###########
