@@ -4,20 +4,26 @@ import tensorflow as tf
 #         print(content)
 # filename = "gs://ptosis-test/data/img/*.jpg"
 
-def _get_unk_mapping(filename):
-  """Reads a file that specifies a mapping from source to target tokens.
-  The file must contain lines of the form <source>\t<target>"
+# def _get_unk_mapping(filename):
+#   """Reads a file that specifies a mapping from source to target tokens.
+#   The file must contain lines of the form <source>\t<target>"
 
-  Args:
-    filename: path to the mapping file
+#   Args:
+#     filename: path to the mapping file
 
-  Returns:
-    A dictionary that maps from source -> target tokens.
-  """
-  with tf.gfile.ListDirectory(filename, "r") as mapping_file:
-    lines = mapping_file.readlines()
-    mapping = dict([_.split("\t")[0:2] for _ in lines])
-    mapping = {k.strip(): v.strip() for k, v in mapping.items()}
-  return lines
+#   Returns:
+#     A dictionary that maps from source -> target tokens.
+#   """
+#   with tf.gfile.GFile(filename, "r") as mapping_file:
+#     lines = mapping_file.readlines()
+#     mapping = dict([_.split("\t")[0:2] for _ in lines])
+#     mapping = {k.strip(): v.strip() for k, v in mapping.items()}
+#   return lines
 
-print(_get_unk_mapping('gs://ptosis-test/data/img/'))
+# print(_get_unk_mapping('gs://ptosis-test/data/img/*.jpg'))
+
+def file_names(filename):
+    filenames = tf.gfile.ListDirectory(filename)
+    return filename
+
+print(file_names('gs://ptosis-test/data/img/'))
