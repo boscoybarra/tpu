@@ -68,7 +68,7 @@ def _parse_function(filename):
 #     dataset = dataset.map(parser, num_parallel_calls=batch_size)
 #     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
 #     dataset = dataset.apply(
-#         tf.contrib.data.batch_and_drop_remainder(batch_size))
+#         tf.data.Dataset.batch(batch_size))
 #     dataset = dataset.prefetch(2)
 #     images, labels = dataset.make_one_shot_iterator().get_next()
 
@@ -101,6 +101,10 @@ class InputFunction(object):
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
       dataset = dataset.map(_parse_function)
+      dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+      dataset = dataset.apply(
+        tf.data.Dataset.batch(batch_size))
+      dataset = dataset.prefetch(2)
       images = dataset.make_one_shot_iterator().get_next()
       print("L89",images)
       print("L90",images.shape)
