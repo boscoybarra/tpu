@@ -26,7 +26,7 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', './data/img/*.jpg',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/',
                     'Path to CIFAR10 training data.')
 
 
@@ -74,7 +74,8 @@ class InputFunction(object):
   def __call__(self, params):
     # A vector of filenames.
     batch_size = params['batch_size']
-    filenames = tf.constant(["./data/img/*.jpg"])
+    print("HELLO")
+    filenames = tf.constant(['gs://ptosis-test/data/img/*.jpg'])
 
     dataset = tf.data.Dataset.from_tensor_slices((filenames))
     dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
