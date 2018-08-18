@@ -57,7 +57,7 @@ def _parse_function(filename):
   image_decoded = tf.image.decode_jpeg(image_string)
   image_resized = tf.image.resize_images(image_decoded, [64, 64])
   image = image_resized
-  mage.set_shape([3*64*64])
+  image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
