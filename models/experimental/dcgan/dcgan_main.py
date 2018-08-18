@@ -106,17 +106,17 @@ def model_fn(features, labels, mode, params):
 
   # Calculate discriminator loss
   d_loss_on_data = tf.nn.sigmoid_cross_entropy_with_logits(
-      # labels=tf.ones_like(d_on_data_logits),
+      labels=tf.ones_like(d_on_data_logits),
       logits=d_on_data_logits)
   d_loss_on_gen = tf.nn.sigmoid_cross_entropy_with_logits(
-      # labels=tf.zeros_like(d_on_g_logits),
+      labels=tf.zeros_like(d_on_g_logits),
       logits=d_on_g_logits)
 
   d_loss = d_loss_on_data + d_loss_on_gen
 
   # Calculate generator loss
   g_loss = tf.nn.sigmoid_cross_entropy_with_logits(
-      # labels=tf.ones_like(d_on_g_logits),
+      labels=tf.ones_like(d_on_g_logits),
       logits=d_on_g_logits)
 
   if mode == tf.estimator.ModeKeys.TRAIN:
