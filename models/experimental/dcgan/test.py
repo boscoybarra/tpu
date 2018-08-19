@@ -9,7 +9,7 @@ print(len(name))
 
 
 im = map('gs://ptosis-test/data/img/{}'.format, name)
-im = Image.open([im])
+im = Image.open(im)
 im = np.array(im)
 print("HOLA", im)
 
