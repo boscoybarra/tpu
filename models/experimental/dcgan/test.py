@@ -16,7 +16,8 @@ for name in names:
     print(im)
 
     # IMport from dir instead of gs:// ??
-    im = np.array(tf.gfile.FastGFile(im, 'r').tf.gfile.GFile.read(n=-1), dtype=np.uint8)
+    im = np.array(tf.gfile.FastGFile(im, 'r'), dtype=np.uint8)
+    im = tf.gfile.GFile.read(n=-1)
     r = im[:,:,0].flatten()
     g = im[:,:,1].flatten()
     b = im[:,:,2].flatten()
