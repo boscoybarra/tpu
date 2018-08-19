@@ -63,7 +63,7 @@ def parser(serialized_example):
 # Test
 def _parse_function(filename):
   image_string = tf.read_file(filename)
-  image_resized = tf.image.resize_images(image_string, [64, 64])
+  image_resized = tf.image.resize_images(image_string, [64, 64, 3])
   return image_resized
 
 
