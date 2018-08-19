@@ -1,6 +1,7 @@
 import tensorflow as tf
 from PIL import Image
 import numpy as np
+import os
 
 
 name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
