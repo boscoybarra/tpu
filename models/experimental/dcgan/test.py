@@ -11,10 +11,11 @@ read
 
 # colors = ["red", "green", "blue", "purple"]
 for name in names:
+    reader = tf.TFRecordReader()
     im = ('gs://ptosis-test/data/img/{}'.format(name))
     print(im)
 
-    im = np.array(Image.open(tf.gfile.FastGFile(im, 'r').read()), dtype=np.uint8)
+    im = np.array(Image.open(tf.gfile.FastGFile(im, 'r').reader.read()), dtype=np.uint8)
     r = im[:,:,0].flatten()
     g = im[:,:,1].flatten()
     b = im[:,:,2].flatten()
