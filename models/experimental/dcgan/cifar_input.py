@@ -32,14 +32,38 @@ FLAGS = flags.FLAGS
 #                     'Path to CIFAR10 training data.')
 
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img2/',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.bin/',
                     'Path to CIFAR10 training data.')
 
 
+# Use this parser function for .bin fiiles with CIFAR-10 binary format, check test.py to create such files.
+def parser(serialized_example):
+  """Parses a single tf.Example into image and label tensors."""
+  features = tf.parse_single_example(
+      serialized_example,
+      features={
+          'image': tf.FixedLenFeature([], tf.string),
+          'label': tf.FixedLenFeature([], tf.int64),
+      })
+  image = tf.decode_raw(features['image'], tf.uint8)
+  image.set_shape([3*64*64])
+  # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
+  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+  image = tf.transpose(tf.reshape(image, [3, 64*64]))
+  label = tf.cast(features['label'], tf.int32)
+  return image, label
+
+# Use this function for raw jpgs image
+# def _parse_function(filename):
+#   image_string = tf.read_file(filename)
+#   image_decoded = tf.image.decode_jpeg(image_string)
+#   image_resized = tf.image.resize_images(image_decoded, [64, 64])
+#   return image_resized
+
+# Test
 def _parse_function(filename):
   image_string = tf.read_file(filename)
-  image_decoded = tf.image.decode_jpeg(image_string)
-  image_resized = tf.image.resize_images(image_decoded, [64, 64])
+  image_resized = tf.image.resize_images(image_string, [64, 64])
   return image_resized
 
 
