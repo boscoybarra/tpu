@@ -89,8 +89,6 @@ class InputFunction(object):
         tf.contrib.data.batch_and_drop_remainder(batch_size))
       dataset = dataset.prefetch(2)
       images = dataset.make_one_shot_iterator().get_next()
-      print("L89",images)
-      print("L90",images.shape)
       # Reshape to give inputs statically known shapes.
       images = tf.reshape(images, [batch_size, 64, 64, 3])
       random_noise = tf.random_normal([batch_size, self.noise_dim])
