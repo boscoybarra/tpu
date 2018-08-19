@@ -8,11 +8,9 @@ print(name)
 print(len(name))
 
 
-print(map('the number is {}'.format, name))
-
-im = Image.open('{}'.format, name)
+im = Image.open(map('the number is {}'.format, name))
 im = np.array(im)
-print("HOLA",im)
+print("HOLA", im)
 
 r = im[:,:,0].flatten()
 g = im[:,:,1].flatten()
