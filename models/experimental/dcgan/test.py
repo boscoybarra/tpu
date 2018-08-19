@@ -26,3 +26,8 @@ import tensorflow as tf
 name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
 print(name)
 print len(name)
+
+
+print map('the number is {}'.format, name) 
+
+# print ', '.join(str(x) for x in list_of_ints)
