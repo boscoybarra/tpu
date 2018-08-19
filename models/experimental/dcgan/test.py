@@ -5,13 +5,14 @@ import numpy as np
 
 name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
 print(name)
-print len(name)
+print(len(name))
 
 
-print map('the number is {}'.format, name) 
+print(map('the number is {}'.format, name))
 
-im = Image.open('images.jpeg')
-im = (np.array(im))
+im = Image.open('{}'.format, name)
+im = np.array(im)
+print("HOLA",im)
 
 r = im[:,:,0].flatten()
 g = im[:,:,1].flatten()
