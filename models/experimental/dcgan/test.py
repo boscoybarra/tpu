@@ -11,9 +11,9 @@ names = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
 
 # colors = ["red", "green", "blue", "purple"]
 for name in names:
-    im = tf.gfile.ListDirectory('gs://ptosis-test/data/img/{}'.format, name)
+    im = ('gs://ptosis-test/data/img/{}'.format, name)
     print("HOLA",im)
-    im = (np.array(im))
+    # im = (np.array(im))
 
 
 
