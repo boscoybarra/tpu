@@ -30,7 +30,9 @@ FLAGS = flags.FLAGS
 # TODO: Maybe keep the path as flag and add the name along every iteration knowing the amount of images you have?
 # flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
 #                     'Path to CIFAR10 training data.')
-flags.DEFINE_string('cifar_train_data_file', '',
+
+
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
                     'Path to CIFAR10 training data.')
 
 
