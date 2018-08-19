@@ -14,18 +14,20 @@ for name in names:
     print(im)
 
     # IMport from dir instead of gs:// ??
-    im = np.array(tf.gfile.Open(im))
-    print(im)
-    # im = tf.gfile.GFile.read(n=-1)
-    r = im[:,:,0].flatten()
-    g = im[:,:,1].flatten()
-    b = im[:,:,2].flatten()
-    label = [1]
+    with tf.gfile.GFile(im, "r") as f:
+        content = f.read()
+        content = np.array(content, dtype=np.uint8)
+        print(content)
+        # im = tf.gfile.GFile.read(n=-1)
+        r = content[:,:,0].flatten()
+        g = content[:,:,1].flatten()
+        b = content[:,:,2].flatten()
+        label = [1]
 
-    outfile = "./data"
-    out = np.array(list(label) + list(r) + list(g) + list(b),np.uint8)
-    out.tofile("out.bin")
-    np.save(outfile, out)
+        outfile = "./data"
+        out = np.array(list(label) + list(r) + list(g) + list(b),np.uint8)
+        out.tofile("out.bin")
+        np.save(outfile, out)
 
 
 # The CIFAR-10 binary format represents each example as a fixed-length record with the following format:
