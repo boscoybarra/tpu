@@ -28,7 +28,9 @@ FLAGS = flags.FLAGS
 
 # TODO: Pass to this flag list of image names such as what is going on in test.py
 # TODO: Maybe keep the path as flag and add the name along every iteration knowing the amount of images you have?
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
+# flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
+#                     'Path to CIFAR10 training data.')
+flags.DEFINE_string('cifar_train_data_file', '',
                     'Path to CIFAR10 training data.')
 
 
