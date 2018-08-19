@@ -25,3 +25,4 @@ import tensorflow as tf
 
 name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
 print(name)
+print len(name)
