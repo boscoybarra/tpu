@@ -15,7 +15,8 @@ for name in names:
     im = ('gs://ptosis-test/data/img/{}'.format(name))
     print(im)
 
-    im = np.array(Image.open(tf.gfile.FastGFile(im, 'r').read(n=-1)), dtype=np.uint8)
+    # IMport from dir instead of gs:// ??
+    im = np.array(tf.gfile.FastGFile(im, 'r').tf.gfile.GFile.read(n=-1), dtype=np.uint8)
     r = im[:,:,0].flatten()
     g = im[:,:,1].flatten()
     b = im[:,:,2].flatten()
