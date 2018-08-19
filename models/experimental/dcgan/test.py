@@ -1,26 +1,6 @@
 import tensorflow as tf
-# with tf.gfile.GFile("gs://ptosis-test/data/img/", "r") as f:
-#         content = f.readlines()
-#         print(content)
-# filename = "gs://ptosis-test/data/img/*.jpg"
-
-# def _get_unk_mapping(filename):
-#   """Reads a file that specifies a mapping from source to target tokens.
-#   The file must contain lines of the form <source>\t<target>"
-
-#   Args:
-#     filename: path to the mapping file
-
-#   Returns:
-#     A dictionary that maps from source -> target tokens.
-#   """
-#   with tf.gfile.GFile(filename, "r") as mapping_file:
-#     lines = mapping_file.readlines()
-#     mapping = dict([_.split("\t")[0:2] for _ in lines])
-#     mapping = {k.strip(): v.strip() for k, v in mapping.items()}
-#   return lines
-
-# print(_get_unk_mapping('gs://ptosis-test/data/img/*.jpg'))
+from PIL import Image
+import numpy as np
 
 
 name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
@@ -30,4 +10,15 @@ print len(name)
 
 print map('the number is {}'.format, name) 
 
-# print ', '.join(str(x) for x in list_of_ints)
+im = Image.open('images.jpeg')
+im = (np.array(im))
+
+r = im[:,:,0].flatten()
+g = im[:,:,1].flatten()
+b = im[:,:,2].flatten()
+label = [1]
+
+outfile = "./data"
+out = np.array(list(label) + list(r) + list(g) + list(b),np.uint8)
+out.tofile("out.bin")
+# np.save(outfile, x)
