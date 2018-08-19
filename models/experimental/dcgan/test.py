@@ -16,7 +16,7 @@ for name in names:
     # IMport from dir instead of gs:// ??
     with tf.gfile.GFile(im, "r") as f:
         content = f.read()
-        content = np.array(content, dtype=np.uint8)
+        content = np.array(content)
         print(content)
         # im = tf.gfile.GFile.read(n=-1)
         r = content[:,:,0].flatten()
