@@ -9,7 +9,7 @@ print(len(name))
 
 
 # im = map('gs://ptosis-test/data/img/{}'.format, name)
-im = Image.open('gs://ptosis-test/data/img/{}'.format, name)
+im = Image.open(tf.gfile.ListDirectory('gs://ptosis-test/data/img/{}'.format, name))
 print(im)
 im = (np.array(im))
 print("HOLA", im)
