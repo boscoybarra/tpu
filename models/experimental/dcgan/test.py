@@ -10,7 +10,7 @@ print(len(name))
 
 # im = map('gs://ptosis-test/data/img/{}'.format, name)
 im = Image.open('gs://ptosis-test/data/img/{}'.format, name)
-im = np.array(im)
+im = (np.array(im))
 print("HOLA", im)
 
 r = im[:,:,0].flatten()
