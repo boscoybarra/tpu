@@ -49,7 +49,7 @@ def parser(serialized_example):
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  image = tf.reshape(image, [3, 64*64])
+  image = tf.transpose(tf.reshape(image, [3, 64*64]))
   label = tf.cast(features['label'], tf.int32)
   return image, label
 
@@ -79,7 +79,7 @@ class InputFunction(object):
     batch_size = params['batch_size']
     dataset = tf.data.TFRecordDataset([self.data_file])
     dataset = dataset.map(parser, num_parallel_calls=batch_size)
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+    dataset = dataset.prefetch(2 * batch_size).cache().repeat()
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
     dataset = dataset.prefetch(2)
