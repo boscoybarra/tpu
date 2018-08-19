@@ -2,7 +2,7 @@
 .ipynb_checkpoints
 node_modules
 /models/experimental/dcgan/output.bin
-/models/experimental/dcgan/data
+models/experimental/dcgan/data
 /.bazelrc
 /.tf_configure.bazelrc
 /bazel-*
