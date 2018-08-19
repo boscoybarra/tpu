@@ -3,17 +3,18 @@ from PIL import Image
 import numpy as np
 
 
-name = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
-print(name)
-print(len(name))
+names = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
+
 
 
 # im = map('gs://ptosis-test/data/img/{}'.format, name)
 
-im = tf.gfile.ListDirectory('gs://ptosis-test/data/img/{}'.format, name)
-print im
-im = (np.array(im))
-print("HOLA", im)
+# colors = ["red", "green", "blue", "purple"]
+for name in names:
+    im = tf.gfile.ListDirectory('gs://ptosis-test/data/img/{}'.format, name)
+    print("HOLA",im)
+    im = (np.array(im))
+
 
 
 r = im[:,:,0].flatten()
