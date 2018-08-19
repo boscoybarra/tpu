@@ -5,8 +5,6 @@ import numpy as np
 
 names = tf.gfile.ListDirectory('gs://ptosis-test/data/img/')
 
-read
-
 # im = map('gs://ptosis-test/data/img/{}'.format, name)
 
 # colors = ["red", "green", "blue", "purple"]
@@ -16,8 +14,7 @@ for name in names:
     print(im)
 
     # IMport from dir instead of gs:// ??
-    im = np.array(tf.gfile.FastGFile(im, 'r'), dtype=np.uint8)
-    im = tf.gfile.GFile.read(n=-1)
+    im = np.array(tf.gfile.GFile(tf.gfile.FastGFile(im, 'r')).read(n=-1), dtype=np.uint8)
     r = im[:,:,0].flatten()
     g = im[:,:,1].flatten()
     b = im[:,:,2].flatten()
