@@ -8,7 +8,7 @@ print(name)
 print(len(name))
 
 
-im = Image.open(map('the number is {}'.format, name))
+im = map('the number is {}'.format, name)
 im = np.array(im)
 print("HOLA", im)
 
