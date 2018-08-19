@@ -32,7 +32,7 @@ FLAGS = flags.FLAGS
 #                     'Path to CIFAR10 training data.')
 
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.bin/',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.bin',
                     'Path to CIFAR10 training data.')
 
 
@@ -61,10 +61,10 @@ def parser(serialized_example):
 #   return image_resized
 
 # Test
-def _parse_function(filename):
-  image_string = tf.read_file(filename)
-  image_resized = tf.image.resize_images(image_string, [64, 64, 3])
-  return image_resized
+# def _parse_function(filename):
+#   image_string = tf.read_file(filename)
+#   image_resized = tf.image.resize_images(image_string, [64, 64])
+#   return image_resized
 
 
 class InputFunction(object):
@@ -83,7 +83,7 @@ class InputFunction(object):
       filenames = tf.constant([self.data_file])
 
       dataset = tf.data.Dataset.from_tensor_slices((filenames))
-      dataset = dataset.map(_parse_function)
+      dataset = dataset.map(parser)
       dataset = dataset.prefetch(4 * batch_size).cache().repeat()
       dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
