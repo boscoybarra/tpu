@@ -48,7 +48,7 @@ def parser(serialized_example):
   image = tf.decode_raw(features['image'], tf.uint8)
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+  image = tf.cast(image, tf.float32) * (1.0 / 255) - 1.0
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
   label = tf.cast(features['label'], tf.int32)
   return image, label
@@ -80,8 +80,8 @@ class InputFunction(object):
     dataset = tf.data.TFRecordDataset([self.data_file])
     dataset = dataset.map(parser, num_parallel_calls=batch_size)
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-    dataset = dataset = dataset.apply(
-        tf.data.Dataset.batch(batch_size))
+    dataset = dataset.apply(
+        tf.contrib.data.batch_and_drop_remainder(batch_size))
     dataset = dataset.prefetch(2)
     images, labels = dataset.make_one_shot_iterator().get_next()
 
@@ -150,5 +150,5 @@ class InputFunction(object):
 
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
-  img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='RGB')
+  img = Image.fromarray(np.uint8((array + 1.0) / 1.0 * 255), mode='RGB')
   return img
