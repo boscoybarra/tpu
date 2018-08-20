@@ -49,7 +49,7 @@ def parser(serialized_example):
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  image = tf.transpose(tf.reshape(image, [3, 64*64]))
+  image = tf.reshape(image, [3, 64*64])
   label = tf.cast(features['label'], tf.int32)
   return image, label
 
@@ -86,7 +86,7 @@ class InputFunction(object):
     images, labels = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
-    images = tf.transpose(tf.reshape(images, [batch_size, 64, 64, 3]))
+    images = tf.reshape(images, [batch_size, 64, 64, 3])
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
