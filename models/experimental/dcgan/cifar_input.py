@@ -32,7 +32,7 @@ FLAGS = flags.FLAGS
 #                     'Path to CIFAR10 training data.')
 
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.bin',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.tfrecord',
                     'Path to CIFAR10 training data.')
 
 
@@ -78,6 +78,7 @@ class InputFunction(object):
   def __call__(self, params):
     batch_size = params['batch_size']
     dataset = tf.data.TFRecordDataset([self.data_file])
+    # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
     dataset = dataset.map(parser, num_parallel_calls=batch_size)
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
