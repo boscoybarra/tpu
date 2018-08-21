@@ -77,30 +77,6 @@ class InputFunction(object):
     self.image_size = image_size
     self.use_bfloat16 = use_bfloat16
 
-  def __call__(self, params):
-    batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
-    # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
-    if self.is_training:
-      dataset = dataset.repeat()
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-    dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
-    images, labels = dataset.make_one_shot_iterator().get_next()
-
-    # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
-
-    random_noise = tf.random_normal([batch_size, self.noise_dim])
-
-    features = {
-        'real_images': images,
-        'random_noise': random_noise}
-
-    return features, labels
-
   def parser(value):
     """Parses an image and its label from a serialized ResNet-50 TFExample.
     Args:
@@ -134,6 +110,30 @@ class InputFunction(object):
         tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
 
     return image, label
+
+  def __call__(self, params):
+    batch_size = params['batch_size']
+    dataset = tf.data.TFRecordDataset([self.data_file])
+    # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
+    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    if self.is_training:
+      dataset = dataset.repeat()
+    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+    dataset = dataset.apply(
+        tf.contrib.data.batch_and_drop_remainder(batch_size))
+    dataset = dataset.prefetch(2)
+    images, labels = dataset.make_one_shot_iterator().get_next()
+
+    # Reshape to give inputs statically known shapes.
+    images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+    random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+    features = {
+        'real_images': images,
+        'random_noise': random_noise}
+
+    return features, labels
 
   # def __call__(self, params):
 
