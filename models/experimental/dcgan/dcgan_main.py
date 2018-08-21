@@ -54,13 +54,13 @@ flags.DEFINE_string('dataset', 'cifar',
 flags.DEFINE_string('model_dir', 'gs://ptosis-test/cifar', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,
                      'Number of dimensions for the noise vector')
-flags.DEFINE_integer('batch_size', 100,
+flags.DEFINE_integer('batch_size', 1024,
                      'Batch size for both generator and discriminator')
 flags.DEFINE_integer('num_shards', None, 'Number of TPU chips')
-flags.DEFINE_integer('train_steps', 50, 'Number of training steps')
-flags.DEFINE_integer('train_steps_per_eval', 10,
+flags.DEFINE_integer('train_steps', 10000, 'Number of training steps')
+flags.DEFINE_integer('train_steps_per_eval', 1000,
                      'Steps per eval and image generation')
-flags.DEFINE_integer('iterations_per_loop', 1,
+flags.DEFINE_integer('iterations_per_loop', 100,
                      'Steps per interior TPU loop. Should be less than'
                      ' --train_steps_per_eval')
 flags.DEFINE_float('learning_rate', 0.0002, 'LR for both D and G')
@@ -71,7 +71,7 @@ flags.DEFINE_boolean('use_tpu', True, 'Use TPU for training')
 _NUM_VIZ_IMAGES = 100   # For generating a 10x10 grid of generator samples
 
 # Global variables for data and model
-dataset = None
+dataset = cifar_input
 model = None
 
 
@@ -215,8 +215,8 @@ def main(argv):
   # identical for each different kind of dataset and model
   global dataset, model
   if FLAGS.dataset == 'mnist':
-    dataset = mnist_input
-    model = mnist_model
+    dataset = cifar_input
+    model = cifar_model
   elif FLAGS.dataset == 'cifar':
     dataset = cifar_input
     model = cifar_model
