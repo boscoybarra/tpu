@@ -71,7 +71,7 @@ flags.DEFINE_boolean('use_tpu', True, 'Use TPU for training')
 _NUM_VIZ_IMAGES = 100   # For generating a 10x10 grid of generator samples
 
 # Global variables for data and model
-dataset = cifar_input
+dataset = None
 model = None
 
 
@@ -215,8 +215,8 @@ def main(argv):
   # identical for each different kind of dataset and model
   global dataset, model
   if FLAGS.dataset == 'mnist':
-    dataset = cifar_input
-    model = cifar_model
+    dataset = mnist_input
+    model = mnist_model
   elif FLAGS.dataset == 'cifar':
     dataset = cifar_input
     model = cifar_model
