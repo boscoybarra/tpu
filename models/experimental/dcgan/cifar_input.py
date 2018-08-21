@@ -34,6 +34,7 @@ FLAGS = flags.FLAGS
 
 flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
+flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
 
 
 # Use this parser function for .bin fiiles with CIFAR-10 binary format, check test.py to create such files.
@@ -73,13 +74,16 @@ class InputFunction(object):
   def __init__(self, is_training, noise_dim):
     self.is_training = is_training
     self.noise_dim = noise_dim
-    self.data_file = (FLAGS.cifar_train_data_file if is_training else print("Not training"))
+    self.data_file = (FLAGS.cifar_train_data_file if is_training
+                      else FLAGS.cifar_test_data_file)
 
   def __call__(self, params):
     batch_size = params['batch_size']
     dataset = tf.data.TFRecordDataset([self.data_file])
     # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
     dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    if self.is_training:
+      dataset = dataset.repeat()
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
