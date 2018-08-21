@@ -113,7 +113,7 @@ class InputFunction(object):
     batch_size = params['batch_size']
     dataset = tf.data.TFRecordDataset([self.data_file])
     # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    dataset = dataset.map(self.parser, num_parallel_calls=batch_size)
     if self.is_training:
       dataset = dataset.repeat()
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
