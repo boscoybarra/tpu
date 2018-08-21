@@ -111,9 +111,10 @@ class InputFunction(object):
   def __call__(self, params):
 
     batch_size = params['batch_size']
-    file_pattern = os.path.join(
-        FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
-    dataset = tf.data.Dataset.list_files(file_pattern)
+    # file_pattern = os.path.join(
+    #     FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
+    dataset = tf.data.TFRecordDataset([self.data_file])
+    dataset = tf.data.Dataset.list_files(dataset)
     if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
       dataset = dataset.shuffle(
           buffer_size=FLAGS.initial_shuffle_buffer_size)
