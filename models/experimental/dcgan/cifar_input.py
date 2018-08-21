@@ -61,23 +61,7 @@ flags.DEFINE_integer('followup_shuffle_buffer_size', 10, 'Followup Shuffle buffe
 #   label = tf.cast(features['label'], tf.int64)
 #   return image, label
 
-
-
-
-
-class InputFunction(object):
-  """Wrapper class that is passed as callable to Estimator."""
-
-  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=224):
-    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
-    self.is_training = is_training
-    self.noise_dim = noise_dim
-    self.data_file = (FLAGS.cifar_train_data_file if is_training
-                      else FLAGS.cifar_test_data_file)
-    self.image_size = image_size
-    self.use_bfloat16 = use_bfloat16
-
-  def parser(value):
+def parser(self, value):
     """Parses an image and its label from a serialized ResNet-50 TFExample.
     Args:
       value: serialized string containing an ImageNet TFExample.
@@ -110,6 +94,20 @@ class InputFunction(object):
         tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
 
     return image, label
+
+
+
+class InputFunction(object):
+  """Wrapper class that is passed as callable to Estimator."""
+
+  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=224):
+    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
+    self.is_training = is_training
+    self.noise_dim = noise_dim
+    self.data_file = (FLAGS.cifar_train_data_file if is_training
+                      else FLAGS.cifar_test_data_file)
+    self.image_size = image_size
+    self.use_bfloat16 = use_bfloat16
 
   def __call__(self, params):
     batch_size = params['batch_size']
