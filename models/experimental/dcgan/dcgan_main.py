@@ -174,7 +174,7 @@ def model_fn(features, labels, mode, params):
 
 def generate_input_fn(is_training):
   """Creates input_fn depending on whether the code is training or not."""
-  return dataset.InputFunction(is_training, FLAGS.noise_dim, use_bfloat16=True)
+  return dataset.InputFunction(is_training, FLAGS.noise_dim, use_bfloat16=False)
 
 
 def noise_input_fn(params):
