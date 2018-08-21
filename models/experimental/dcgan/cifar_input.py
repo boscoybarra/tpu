@@ -50,14 +50,14 @@ def parser(serialized_example):
       serialized_example,
       features={
           'image': tf.FixedLenFeature([], tf.string),
-          'label': tf.FixedLenFeature([], tf.int64),
+          'label': tf.FixedLenFeature([], tf.int32),
       })
   image = tf.decode_raw(features['image'], tf.uint8)
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
-  label = tf.cast(features['label'], tf.int64)
+  label = tf.cast(features['label'], tf.int32)
   return image, label
 
 # Use this function for raw jpgs image
