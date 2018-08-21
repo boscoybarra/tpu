@@ -25,8 +25,8 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('mnist_train_data_file', '', 'Training .tfrecord data file')
-flags.DEFINE_string('mnist_test_data_file', '', 'Test .tfrecord data file')
+flags.DEFINE_string('mnist_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001', 'Training .tfrecord data file')
+flags.DEFINE_string('mnist_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Test .tfrecord data file')
 
 # NUM_TRAIN_IMAGES = 60000
 # NUM_EVAL_IMAGES = 10000
@@ -41,8 +41,8 @@ def parser(serialized_example):
           'label': tf.FixedLenFeature([], tf.int64)   # label is unused
       })
   image = tf.decode_raw(features['image_raw'], tf.uint8)
-  image.set_shape([28 * 28])
-  image = tf.reshape(image, [28, 28, 3])
+  image.set_shape([64 * 64])
+  image = tf.reshape(image, [64, 64, 3])
 
   # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255)
