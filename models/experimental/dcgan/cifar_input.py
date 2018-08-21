@@ -35,6 +35,10 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
 flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
+flags.DEFINE_integer('initial_shuffle_buffer_size', 10, 'Initicial Shuffer buffer Size')
+flags.DEFINE_integer('prefetch_dataset_buffer_size', 10, 'Prefetch Data Buffer Size')
+flags.DEFINE_integer('num_files_infeed', 100, 'Number of Files Infeed')
+flags.DEFINE_integer('followup_shuffle_buffer_size', 10, 'Followup Shuffle buffer Size')
 
 
 # Use this parser function for .bin fiiles with CIFAR-10 binary format, check test.py to create such files.
@@ -77,18 +81,64 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
 
+  # def __call__(self, params):
+  #   batch_size = params['batch_size']
+  #   dataset = tf.data.TFRecordDataset([self.data_file])
+  #   # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
+  #   dataset = dataset.map(parser, num_parallel_calls=batch_size)
+  #   if self.is_training:
+  #     dataset = dataset.repeat()
+  #   dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+  #   dataset = dataset.apply(
+  #       tf.contrib.data.batch_and_drop_remainder(batch_size))
+  #   dataset = dataset.prefetch(2)
+  #   dataset = dataset.shuffle().batch().repeat()
+  #   images, labels = dataset.make_one_shot_iterator().get_next()
+
+  #   # Reshape to give inputs statically known shapes.
+  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+  #   features = {
+  #       'real_images': images,
+  #       'random_noise': random_noise}
+
+  #   return features, labels
+
   def __call__(self, params):
+
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
-    # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    file_pattern = os.path.join(
+        FLAGS.data_dir, 'gs://ptosis-test/data/train-00000-of-00001' if self.is_training else 'gs://ptosis-test/data/validation-00000-of-00001')
+    dataset = tf.data.Dataset.list_files(file_pattern)
+    if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
+      dataset = dataset.shuffle(
+          buffer_size=FLAGS.initial_shuffle_buffer_size)
     if self.is_training:
       dataset = dataset.repeat()
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+
+    def prefetch_dataset(filename):
+      dataset = tf.data.TFRecordDataset(
+          filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
+      return dataset
+
+    dataset = dataset.apply(
+        tf.contrib.data.parallel_interleave(
+            prefetch_dataset,
+            cycle_length=FLAGS.num_files_infeed,
+            sloppy=True))
+    if FLAGS.followup_shuffle_buffer_size > 0:
+      dataset = dataset.shuffle(
+          buffer_size=FLAGS.followup_shuffle_buffer_size)
+
+    # Preprocessing
+    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+
+    dataset = dataset.prefetch(batch_size)
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
-    dataset = dataset.shuffle().batch().repeat()
+    dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
     images, labels = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
