@@ -61,41 +61,6 @@ flags.DEFINE_integer('followup_shuffle_buffer_size', 10, 'Followup Shuffle buffe
 #   label = tf.cast(features['label'], tf.int64)
 #   return image, label
 
-def parser(self, value):
-    """Parses an image and its label from a serialized ResNet-50 TFExample.
-    Args:
-      value: serialized string containing an ImageNet TFExample.
-    Returns:
-      Returns a tuple of (image, label) from the TFExample.
-    """
-    keys_to_features = {
-        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
-        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
-        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
-        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
-        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
-    }
-
-    parsed = tf.parse_single_example(value, keys_to_features)
-    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
-
-    image = self.image_preprocessing_fn(
-        image_bytes=image_bytes,
-        is_training=self.is_training,
-        image_size=self.image_size,
-        use_bfloat16=self.use_bfloat16)
-
-    # Subtract one so that labels are in [0, 1000).
-    label = tf.cast(
-        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
-
-    return image, label
-
-
 
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
@@ -132,6 +97,40 @@ class InputFunction(object):
         'random_noise': random_noise}
 
     return features, labels
+
+  def parser(self, value):
+    """Parses an image and its label from a serialized ResNet-50 TFExample.
+    Args:
+      value: serialized string containing an ImageNet TFExample.
+    Returns:
+      Returns a tuple of (image, label) from the TFExample.
+    """
+    keys_to_features = {
+        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
+        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
+        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
+        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
+    }
+
+    parsed = tf.parse_single_example(value, keys_to_features)
+    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
+
+    image = self.image_preprocessing_fn(
+        image_bytes=image_bytes,
+        is_training=self.is_training,
+        image_size=self.image_size,
+        use_bfloat16=self.use_bfloat16)
+
+    # Subtract one so that labels are in [0, 1000).
+    label = tf.cast(
+        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
+
+    return image, label
 
   # def __call__(self, params):
 
