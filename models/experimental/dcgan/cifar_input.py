@@ -25,6 +25,7 @@ from PIL import Image
 import tensorflow as tf
 import os
 import resnet_preprocessing
+import functools
 
 FLAGS = flags.FLAGS
 
@@ -65,7 +66,7 @@ flags.DEFINE_integer('followup_shuffle_buffer_size', 10, 'Followup Shuffle buffe
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
-  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64):
+  def __init__(self, is_training, noise_dim, use_bfloat16, transpose_input, num_cores=1, image_size=64):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
     self.noise_dim = noise_dim
@@ -73,19 +74,32 @@ class InputFunction(object):
                       else FLAGS.cifar_test_data_file)
     self.image_size = image_size
     self.use_bfloat16 = use_bfloat16
+    self.num_cores = num_cores
+    self.transpose_input = transpose_input
 
   def __call__(self, params):
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
+    dataset = self.make_source_dataset()
+    # TODO: IS TFRecordDataset THE CORRECT WAY TO PASS A serialized string containing an ImageNet TFExample?
     # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-    dataset = dataset.map(self.parser, num_parallel_calls=batch_size)
-    if self.is_training:
-      dataset = dataset.repeat()
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+    dataset = tf.data.TFRecordDataset([self.data_file])
     dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
-    images, labels = dataset.make_one_shot_iterator().get_next()
+        tf.contrib.data.map_and_batch(
+            self.parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
+
+    # Transpose for performance on TPU
+    if self.transpose_input:
+      dataset = dataset.map(
+          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
+          num_parallel_calls=self.num_cores)
+
+    # Assign static batch size dimension
+    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+
+    # Prefetch overlaps in-feed with training
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+    images, labels = dataset.make_one_shot_iterator().get_next()    
 
     # Reshape to give inputs statically known shapes.
     images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -97,6 +111,21 @@ class InputFunction(object):
         'random_noise': random_noise}
 
     return features, labels
+
+  def set_shapes(self, batch_size, images, labels):
+    """Statically set the batch_size dimension."""
+    if self.transpose_input:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([None, None, None, batch_size])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+    else:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([batch_size, None, None, None])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+
+    return images, labels
 
   def parser(self, value):
     """Parses an image and its label from a serialized ResNet-50 TFExample.
@@ -131,6 +160,17 @@ class InputFunction(object):
         tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
 
     return image, label
+
+  @abc.abstractmethod
+  def make_source_dataset(self):
+    """Makes dataset of serialized TFExamples.
+    The returned dataset will contain `tf.string` tensors, but these strings are
+    serialized `TFExample` records that will be parsed by `dataset_parser`.
+    If self.is_training, the dataset should be infinite.
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    return
 
   # def __call__(self, params):
 
