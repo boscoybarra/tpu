@@ -32,7 +32,7 @@ FLAGS = flags.FLAGS
 #                     'Path to CIFAR10 training data.')
 
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/output.tfrecord',
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
 
 
