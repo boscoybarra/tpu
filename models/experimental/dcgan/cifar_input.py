@@ -110,8 +110,9 @@ class InputFunction(object):
   def __call__(self, params):
 
     batch_size = params['batch_size']
-    file_pattern = os.path.join(
-        FLAGS.data_dir, 'gs://ptosis-test/data/train-00000-of-00001' if self.is_training else 'gs://ptosis-test/data/validation-00000-of-00001')
+    dataset = tf.data.TFRecordDataset([self.data_file])
+    # file_pattern = os.path.join(
+    #     FLAGS.data_dir, 'gs://ptosis-test/data/train-00000-of-00001' if self.is_training else 'gs://ptosis-test/data/validation-00000-of-00001')
     dataset = tf.data.Dataset.list_files(file_pattern)
     if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
       dataset = dataset.shuffle(
