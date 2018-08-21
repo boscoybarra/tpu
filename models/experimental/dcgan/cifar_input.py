@@ -99,7 +99,7 @@ def parser(value):
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
-  def __init__(self, is_training, noise_dim, image_size=224, use_bfloat16):
+  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=224):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
     self.noise_dim = noise_dim
