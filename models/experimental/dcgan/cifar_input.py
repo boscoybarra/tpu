@@ -26,6 +26,7 @@ import tensorflow as tf
 import os
 import resnet_preprocessing
 import functools
+import abc
 
 FLAGS = flags.FLAGS
 
