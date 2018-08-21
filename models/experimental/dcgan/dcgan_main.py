@@ -51,16 +51,16 @@ flags.DEFINE_string(
 # Model specific paramenters
 flags.DEFINE_string('dataset', 'cifar',
                     'One of ["mnist", "cifar"]. Requires additional flags')
-flags.DEFINE_string('model_dir', 'gs://ptosis-test/cifar', 'Output model directory')
+flags.DEFINE_string('model_dir', 'gs://ptosis-test/dcgan', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,
                      'Number of dimensions for the noise vector')
-flags.DEFINE_integer('batch_size', 1024,
+flags.DEFINE_integer('batch_size', 4096,
                      'Batch size for both generator and discriminator')
 flags.DEFINE_integer('num_shards', None, 'Number of TPU chips')
-flags.DEFINE_integer('train_steps', 10000, 'Number of training steps')
-flags.DEFINE_integer('train_steps_per_eval', 1000,
+flags.DEFINE_integer('train_steps', 1000, 'Number of training steps')
+flags.DEFINE_integer('train_steps_per_eval', 100,
                      'Steps per eval and image generation')
-flags.DEFINE_integer('iterations_per_loop', 100,
+flags.DEFINE_integer('iterations_per_loop', 10,
                      'Steps per interior TPU loop. Should be less than'
                      ' --train_steps_per_eval')
 flags.DEFINE_float('learning_rate', 0.0002, 'LR for both D and G')
@@ -274,6 +274,7 @@ def main(argv):
                      'generated_images', 'gen_%s.png' % (step_string)), 'w')
     img.save(file_obj, format='png')
     tf.logging.info('Finished generating images')
+
 
 if __name__ == '__main__':
   tf.logging.set_verbosity(tf.logging.INFO)
