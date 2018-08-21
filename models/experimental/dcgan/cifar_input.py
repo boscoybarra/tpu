@@ -83,66 +83,18 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
 
-  # def __call__(self, params):
-  #   batch_size = params['batch_size']
-  #   dataset = tf.data.TFRecordDataset([self.data_file])
-  #   # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-  #   dataset = dataset.map(parser, num_parallel_calls=batch_size)
-  #   if self.is_training:
-  #     dataset = dataset.repeat()
-  #   dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-  #   dataset = dataset.apply(
-  #       tf.contrib.data.batch_and_drop_remainder(batch_size))
-  #   dataset = dataset.prefetch(2)
-  #   dataset = dataset.shuffle().batch().repeat()
-  #   images, labels = dataset.make_one_shot_iterator().get_next()
-
-  #   # Reshape to give inputs statically known shapes.
-  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
-
-  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
-
-  #   features = {
-  #       'real_images': images,
-  #       'random_noise': random_noise}
-
-  #   return features, labels
-
   def __call__(self, params):
-
     batch_size = params['batch_size']
-    # file_pattern = os.path.join(
-    #     FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
     dataset = tf.data.TFRecordDataset([self.data_file])
-    # dataset = tf.data.Dataset.list_files(dataset)
-    if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
-      dataset = dataset.shuffle(
-          buffer_size=FLAGS.initial_shuffle_buffer_size)
+    # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
+    dataset = dataset.map(parser, num_parallel_calls=batch_size)
     if self.is_training:
       dataset = dataset.repeat()
-
-    def prefetch_dataset(filename):
-      dataset = tf.data.TFRecordDataset(
-          filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
-      return dataset
-
-    dataset = dataset.apply(
-        tf.contrib.data.parallel_interleave(
-            prefetch_dataset,
-            cycle_length=FLAGS.num_files_infeed,
-            sloppy=True))
-    if FLAGS.followup_shuffle_buffer_size > 0:
-      dataset = dataset.shuffle(
-          buffer_size=FLAGS.followup_shuffle_buffer_size)
-
-    # Preprocessing
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
-
-    dataset = dataset.prefetch(batch_size)
+    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
-    print("HOLA 1")
+    dataset = dataset.prefetch(2)
+    dataset = dataset.shuffle().batch().repeat()
     images, labels = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
@@ -156,44 +108,41 @@ class InputFunction(object):
 
     return features, labels
 
-      # Batch size
-      # batch_size = params['batch_size']
-      # # A vector of filenames.
-      # # filenames = tf.constant(["/data/223680_64.jpg", "/data/223681_64.jpg"])
-      # filenames = tf.constant([self.data_file])
-
-      # dataset = tf.data.Dataset.from_tensor_slices((filenames))
-      # dataset = dataset.map(parser)
-      # dataset = dataset.prefetch(4 * batch_size).cache().repeat()
-      # dataset = dataset.apply(
-      #   tf.contrib.data.batch_and_drop_remainder(batch_size))
-      # dataset = dataset.prefetch(2)
-      # images = dataset.make_one_shot_iterator().get_next()
-      # # Reshape to give inputs statically known shapes.
-      # images = tf.reshape(images, [batch_size, 64, 64, 3])
-      # random_noise = tf.random_normal([batch_size, self.noise_dim])
-
-      # features = {
-      #     'real_images': images,
-      #     'random_noise': random_noise}
-
-      # # return features
-      # return features
-
-
   # def __call__(self, params):
-  #   # A vector of filenames.
-  #   batch_size = params['batch_size']
-  #   print("HELLO")
-  #   filenames = tf.constant(['./data/img/223680_64.jpg'])
 
-  #   dataset = tf.data.Dataset.from_tensor_slices((filenames))
-  #   dataset = dataset.map(_parse_function, num_parallel_calls=batch_size)
-  #   dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+  #   batch_size = params['batch_size']
+  #   file_pattern = os.path.join(
+  #       FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
+  #   dataset = tf.data.Dataset.list_files(file_pattern)
+  #   if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
+  #     dataset = dataset.shuffle(
+  #         buffer_size=FLAGS.initial_shuffle_buffer_size)
+  #   if self.is_training:
+  #     dataset = dataset.repeat()
+
+  #   def prefetch_dataset(filename):
+  #     dataset = tf.data.TFRecordDataset(
+  #         filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
+  #     return dataset
+
   #   dataset = dataset.apply(
-  #       tf.data.Dataset.batch(batch_size))
-  #   dataset = dataset.prefetch(2)
-  #   images = dataset.make_one_shot_iterator().get_next()
+  #       tf.contrib.data.parallel_interleave(
+  #           prefetch_dataset,
+  #           cycle_length=FLAGS.num_files_infeed,
+  #           sloppy=True))
+  #   if FLAGS.followup_shuffle_buffer_size > 0:
+  #     dataset = dataset.shuffle(
+  #         buffer_size=FLAGS.followup_shuffle_buffer_size)
+
+  #   # Preprocessing
+  #   dataset = dataset.map(parser, num_parallel_calls=batch_size)
+
+  #   dataset = dataset.prefetch(batch_size)
+  #   dataset = dataset.apply(
+  #       tf.contrib.data.batch_and_drop_remainder(batch_size))
+  #   dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
+  #   print("HOLA 1")
+  #   images, labels = dataset.make_one_shot_iterator().get_next()
 
   #   # Reshape to give inputs statically known shapes.
   #   images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -204,8 +153,10 @@ class InputFunction(object):
   #       'real_images': images,
   #       'random_noise': random_noise}
 
-  #   # return features, labels
-  #   return features
+  #   return features, labels
+
+
+
 
 
 def convert_array_to_image(array):
