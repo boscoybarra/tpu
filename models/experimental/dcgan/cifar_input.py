@@ -57,7 +57,7 @@ def parser(serialized_example):
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
   image = tf.transpose(tf.reshape(image, [3, 64*64]))
-  label = tf.cast(features['label'], tf.int32)
+  label = tf.cast(features['label'], tf.int64)
   return image, label
 
 # Use this function for raw jpgs image
