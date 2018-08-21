@@ -106,7 +106,7 @@ class InputFunction(object):
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
     self.image_size = image_size
-    self.use_bfloat16 = tf.float32
+    self.use_bfloat16 = use_bfloat16
 
   def __call__(self, params):
     batch_size = params['batch_size']
