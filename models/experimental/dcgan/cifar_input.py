@@ -99,11 +99,14 @@ def parser(value):
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
-  def __init__(self, is_training, noise_dim):
+  def __init__(self, is_training, noise_dim, image_size=224, use_bfloat16):
+    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
+    self.image_size = image_size
+    self.use_bfloat16 = tf.float32
 
   def __call__(self, params):
     batch_size = params['batch_size']
