@@ -52,7 +52,7 @@ def parser(serialized_example):
           'image': tf.FixedLenFeature([], tf.string),
           'label': tf.FixedLenFeature([], tf.int64),
       })
-  image = tf.decode_raw(features['image'], tf.uint8)
+  image = tf.decode_raw(features['image'], tf.int64)
   image.set_shape([3*64*64])
   # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
@@ -160,5 +160,5 @@ class InputFunction(object):
 
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
-  img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='RGB')
+  img = Image.fromarray(np.int64((array + 1.0) / 2.0 * 255), mode='RGB')
   return img
