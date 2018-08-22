@@ -59,12 +59,14 @@ class InputFunction(object):
 
   def __call__(self, params):
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset(self.data_file)
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+    dataset = tf.contrib.data.TFRecordDataset(
+        filename, buffer_size=4096)
+    dataset = dataset.repeat()
     dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
+      tf.contrib.data.map_and_batch(
+         dataset_parser, batch_size=batch_size,
+         num_parallel_batches=1,
+         drop_remainder=True))
     images, labels = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.
