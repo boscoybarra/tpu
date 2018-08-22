@@ -99,7 +99,7 @@ class InputFunction(object):
     dataset = dataset.map(parser_tf)
     dataset = dataset.shuffle(buffer_size=10000)
     dataset = dataset.batch(64)
-    dataset = dataset.repeat(num_epochs)
+    dataset = dataset.repeat()
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for
