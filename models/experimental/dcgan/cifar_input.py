@@ -78,7 +78,7 @@ class InputFunction(object):
     dataset = tf.data.TFRecordDataset(self.data_file)
     dataset = dataset.apply(
         tf.contrib.data.map_and_batch(
-            self.dataset_parser, batch_size=batch_size,
+            self.parser, batch_size=batch_size,
             num_parallel_batches=self.num_cores, drop_remainder=True))
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
