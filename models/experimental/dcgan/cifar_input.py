@@ -64,7 +64,7 @@ class InputFunction(object):
     dataset = dataset.repeat()
     dataset = dataset.apply(
       tf.contrib.data.map_and_batch(
-         dataset_parser, batch_size=batch_size,
+         parser, batch_size=batch_size,
          num_parallel_batches=1,
          drop_remainder=True))
     images, labels = dataset.make_one_shot_iterator().get_next()
