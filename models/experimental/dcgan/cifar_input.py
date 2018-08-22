@@ -35,9 +35,9 @@ def parser(serialized_example):
   """Parses a single tf.Example into image and label tensors."""
   features = tf.parse_single_example(
       serialized_example,
-      features={
-          'image': tf.FixedLenFeature([], tf.string),
-          'label': tf.FixedLenFeature([], tf.int64),
+      features= {
+          'image': tf.FixedLenFeature((), tf.string, ''),
+          'label': tf.FixedLenFeature([], tf.int64)
       })
   image = tf.decode_raw(features['image'], tf.uint8)
   image.set_shape([3*64*64])
@@ -59,7 +59,7 @@ class InputFunction(object):
 
   def __call__(self, params):
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
+    dataset = tf.data.TFRecordDataset(self.data_file)
     dataset = dataset.map(parser, num_parallel_calls=batch_size)
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
