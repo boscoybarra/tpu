@@ -99,7 +99,7 @@ class InputFunction(object):
     dataset = dataset.map(parser_tf)
     dataset = dataset.shuffle(buffer_size=10000)
     dataset = dataset.batch(64)
-    dataset = dataset.repeat()
+    dataset = tf.data.Dataset.range(1).repeat().map(self._get_null_input)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for
@@ -116,6 +116,10 @@ class InputFunction(object):
         'random_noise': random_noise}
 
     return features, labels
+
+  def _get_null_input(self, _):
+    null_image = tf.zeros([64, 64, 3], tf.float32)
+    return null_image, tf.constant(0, tf.float32)
 
   # def __call__(self, params):
   #   batch_size = params['batch_size']
