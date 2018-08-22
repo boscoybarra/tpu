@@ -76,7 +76,10 @@ class InputFunction(object):
   def __call__(self, params):
     batch_size = params['batch_size']
     dataset = tf.data.TFRecordDataset(self.data_file)
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
+    dataset = dataset.apply(
+        tf.contrib.data.map_and_batch(
+            self.dataset_parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
     dataset = dataset.prefetch(4 * batch_size).cache().repeat()
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
