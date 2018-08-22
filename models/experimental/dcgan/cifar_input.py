@@ -30,12 +30,6 @@ import abc
 
 FLAGS = flags.FLAGS
 
-# TODO: Pass to this flag list of image names such as what is going on in test.py
-# TODO: Maybe keep the path as flag and add the name along every iteration knowing the amount of images you have?
-# flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/img/123689_64.jpg',
-#                     'Path to CIFAR10 training data.')
-
-
 flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
 flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
@@ -83,24 +77,34 @@ class InputFunction(object):
     dataset = self.make_source_dataset()
     # TODO: IS TFRecordDataset THE CORRECT WAY TO PASS A serialized string containing an ImageNet TFExample?
     # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
-    dataset = tf.data.TFRecordDataset([self.data_file])
-    dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(
-            self.parser, batch_size=batch_size,
-            num_parallel_batches=self.num_cores, drop_remainder=True))
+    # dataset = tf.data.TFRecordDataset([self.data_file])
+    dataset = tf.data.TFRecordDataset(self.data_file)
+    def parser_tf(record):
+      keys_to_features = {
+          "image_data": tf.FixedLenFeature((), tf.string, default_value=""),
+          "label": tf.FixedLenFeature((), tf.int64,
+                                      default_value=tf.zeros([], dtype=tf.int64)),
+      }
+      parsed = tf.parse_single_example(record, keys_to_features)
 
-    # Transpose for performance on TPU
-    if self.transpose_input:
-      dataset = dataset.map(
-          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
-          num_parallel_calls=self.num_cores)
+      # Perform additional preprocessing on the parsed data.
+      image = tf.image.decode_jpeg(parsed["image_data"])
+      image = tf.reshape(image, [64, 64, 3])
+      label = tf.cast(parsed["label"], tf.int32)
 
-    # Assign static batch size dimension
-    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+      return image, label
 
-    # Prefetch overlaps in-feed with training
-    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-    images, labels = dataset.make_one_shot_iterator().get_next()    
+    # Use `Dataset.map()` to build a pair of a feature dictionary and a label
+    # tensor for each example.
+    dataset = dataset.map(parser_tf)
+    dataset = dataset.shuffle(buffer_size=10000)
+    dataset = dataset.batch(64)
+    dataset = dataset.repeat(num_epochs)
+    iterator = dataset.make_one_shot_iterator()
+
+    # `features` is a dictionary in which each value is a batch of values for
+    # that feature; `labels` is a batch of labels.
+    images, labels = iterator.get_next()
 
     # Reshape to give inputs statically known shapes.
     images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -112,6 +116,42 @@ class InputFunction(object):
         'random_noise': random_noise}
 
     return features, labels
+
+  # def __call__(self, params):
+  #   batch_size = params['batch_size']
+  #   dataset = self.make_source_dataset()
+  #   # TODO: IS TFRecordDataset THE CORRECT WAY TO PASS A serialized string containing an ImageNet TFExample?
+  #   # dataset = tf.data.Dataset.from_tensor_slices([self.data_file])
+  #   # dataset = tf.data.TFRecordDataset([self.data_file])
+  #   dataset = tf.data.TFRecordDataset(self.data_file)
+  #   dataset = dataset.apply(
+  #       tf.contrib.data.map_and_batch(
+  #           self.parser, batch_size=batch_size,
+  #           num_parallel_batches=self.num_cores, drop_remainder=True))
+
+  #   # Transpose for performance on TPU
+  #   if self.transpose_input:
+  #     dataset = dataset.map(
+  #         lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
+  #         num_parallel_calls=self.num_cores)
+
+  #   # Assign static batch size dimension
+  #   dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+
+  #   # Prefetch overlaps in-feed with training
+  #   dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+  #   images, labels = dataset.make_one_shot_iterator().get_next()    
+
+  #   # Reshape to give inputs statically known shapes.
+  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+  #   features = {
+  #       'real_images': images,
+  #       'random_noise': random_noise}
+
+  #   return features, labels
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
@@ -172,56 +212,6 @@ class InputFunction(object):
       A `tf.data.Dataset` object.
     """
     return
-
-  # def __call__(self, params):
-
-  #   batch_size = params['batch_size']
-  #   file_pattern = os.path.join(
-  #       FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
-  #   dataset = tf.data.Dataset.list_files(file_pattern)
-  #   if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
-  #     dataset = dataset.shuffle(
-  #         buffer_size=FLAGS.initial_shuffle_buffer_size)
-  #   if self.is_training:
-  #     dataset = dataset.repeat()
-
-  #   def prefetch_dataset(filename):
-  #     dataset = tf.data.TFRecordDataset(
-  #         filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
-  #     return dataset
-
-  #   dataset = dataset.apply(
-  #       tf.contrib.data.parallel_interleave(
-  #           prefetch_dataset,
-  #           cycle_length=FLAGS.num_files_infeed,
-  #           sloppy=True))
-  #   if FLAGS.followup_shuffle_buffer_size > 0:
-  #     dataset = dataset.shuffle(
-  #         buffer_size=FLAGS.followup_shuffle_buffer_size)
-
-  #   # Preprocessing
-  #   dataset = dataset.map(parser, num_parallel_calls=batch_size)
-
-  #   dataset = dataset.prefetch(batch_size)
-  #   dataset = dataset.apply(
-  #       tf.contrib.data.batch_and_drop_remainder(batch_size))
-  #   dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
-  #   print("HOLA 1")
-  #   images, labels = dataset.make_one_shot_iterator().get_next()
-
-  #   # Reshape to give inputs statically known shapes.
-  #   images = tf.reshape(images, [batch_size, 64, 64, 3])
-
-  #   random_noise = tf.random_normal([batch_size, self.noise_dim])
-
-  #   features = {
-  #       'real_images': images,
-  #       'random_noise': random_noise}
-
-  #   return features, labels
-
-
-
 
 
 def convert_array_to_image(array):
