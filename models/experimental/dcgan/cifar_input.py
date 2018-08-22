@@ -89,7 +89,10 @@ class InputFunction(object):
 
       # Perform additional preprocessing on the parsed data.
       image = tf.image.decode_jpeg(parsed["image_data"])
-      image = tf.reshape(image, [64, 64, 3])
+      # Reshape to give inputs statically known shapes.
+      image.set_shape([3*64*64])
+      image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+      image = tf.transpose(tf.reshape(image, [3, 64*64]))
       label = tf.cast(parsed["label"], tf.int32)
 
       return image, label
@@ -106,8 +109,7 @@ class InputFunction(object):
     # that feature; `labels` is a batch of labels.
     images, labels = iterator.get_next()
 
-    # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
+    
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
