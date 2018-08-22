@@ -59,7 +59,7 @@ class InputFunction(object):
 
   def __call__(self, params):
     batch_size = params['batch_size']
-    dataset = tf.contrib.data.TFRecordDataset(
+    dataset = tf.data.TFRecordDataset(
          self.data_file, buffer_size=4096)
     dataset = dataset.repeat()
     dataset = dataset.apply(
