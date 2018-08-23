@@ -55,6 +55,7 @@ class ImageNetTFExampleInput(object):
 
   def __init__(self,
                is_training,
+               noise_dim,
                use_bfloat16=True,
                num_cores=1,
                image_size=64,
@@ -65,6 +66,9 @@ class ImageNetTFExampleInput(object):
     self.num_cores = num_cores
     self.transpose_input = transpose_input
     self.image_size = image_size
+    self.noise_dim = noise_dim
+    self.data_file = (FLAGS.mnist_train_data_file if is_training
+                      else FLAGS.mnist_test_data_file)
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
@@ -146,6 +150,7 @@ class ImageNetTFExampleInput(object):
     # computed according to the input pipeline deployment. See
     # tf.contrib.tpu.RunConfig for details.
     batch_size = params['batch_size']
+    dataset = tf.data.TFRecordDataset(self.data_file)
 
     dataset = self.make_source_dataset()
 
