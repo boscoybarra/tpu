@@ -24,6 +24,7 @@ import numpy as np
 from PIL import Image
 import tensorflow as tf
 import resnet_preprocessing
+import os
 
 FLAGS = flags.FLAGS
 
