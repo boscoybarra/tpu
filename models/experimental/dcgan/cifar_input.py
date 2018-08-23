@@ -56,8 +56,8 @@ class ImageNetTFExampleInput(object):
   def __init__(self,
                is_training,
                use_bfloat16,
-               num_cores=8,
-               image_size=224,
+               num_cores=1,
+               image_size=64,
                transpose_input=False):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
