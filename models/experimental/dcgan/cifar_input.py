@@ -51,6 +51,7 @@ class ImageNetTFExampleInput(object):
     transpose_input: 'bool' for whether to use the double transpose trick
     num_cores: `int` for the number of TPU cores
   """
+  __metaclass__ = abc.ABCMeta
 
   def __init__(self,
                is_training,
