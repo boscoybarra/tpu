@@ -36,6 +36,7 @@ flags.DEFINE_integer('initial_shuffle_buffer_size', 4096,'Number of elements fro
 flags.DEFINE_integer('followup_shuffle_buffer_size', 0,'Number of elements from dataset that shuffler will sample from. ''This shuffling is done after prefetching is done. ''Set to 0 to disable')
 flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in parallel.')
 flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*4096*4096,'Number of bytes in read buffer. 0 means no buffering.')
+flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
 
 
 def parser(value):
@@ -108,7 +109,7 @@ class InputFunction(object):
     batch_size = params['batch_size']
     dataset = dataset.map(
         parser,
-        num_parallel_batches=self.num_cores,
+        num_parallel_calls=FLAGS.num_parallel_calls,
         drop_remainder=True)
 
     dataset = dataset.prefetch(batch_size)
