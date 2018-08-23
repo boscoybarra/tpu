@@ -67,8 +67,8 @@ class ImageNetTFExampleInput(object):
     self.transpose_input = transpose_input
     self.image_size = image_size
     self.noise_dim = noise_dim
-    self.data_file = (FLAGS.mnist_train_data_file if is_training
-                      else FLAGS.mnist_test_data_file)
+    self.data_file = (FLAGS.cifar_train_data_file if is_training
+                      else FLAGS.cifar_test_data_file)
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
