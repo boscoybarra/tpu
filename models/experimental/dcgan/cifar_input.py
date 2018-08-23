@@ -57,7 +57,7 @@ class InputFunction(object):
   def __call__(self, params):
     # Storage
     file_pattern = os.path.join(
-        FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
+        FLAGS.data_dir, 'train-00000-of-00001' if self.is_training else 'validation-00000-of-00001')
     print("YO2",file_pattern)
     dataset = tf.data.Dataset.list_files(file_pattern)
     if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
