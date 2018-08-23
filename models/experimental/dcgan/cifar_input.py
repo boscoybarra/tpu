@@ -108,7 +108,7 @@ class InputFunction(object):
     # Preprocessing
     batch_size = params['batch_size']
     dataset = dataset.map(
-        parser,
+        self.parser,
         num_parallel_calls=FLAGS.num_parallel_calls)
 
     dataset = dataset.prefetch(batch_size)
