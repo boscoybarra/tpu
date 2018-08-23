@@ -25,8 +25,6 @@ from PIL import Image
 import tensorflow as tf
 import resnet_preprocessing
 import os
-# from abc import ABCMeta
-import functools
 
 FLAGS = flags.FLAGS
 
@@ -46,8 +44,6 @@ flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
-  # __metaclass__ = abc.ABCMeta
-
   def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
     self.is_training = is_training
     self.noise_dim = noise_dim
@@ -60,39 +56,23 @@ class InputFunction(object):
 
   def __call__(self, params):
     # Storage
-    # file_pattern = os.path.join(
-    #     FLAGS.data_dir, 'train-00000-of-00001' if self.is_training else 'validation-00000-of-00001')
-    # print("YO2",file_pattern)
-    # dataset = tf.data.Dataset.list_files(file_pattern)
-    # print("YO3", dataset)
-    # if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
-    #   dataset = dataset.shuffle(
-    #       buffer_size=FLAGS.initial_shuffle_buffer_size)
-    # if self.is_training:
-    #   dataset = dataset.repeat()
+    file_pattern = os.path.join(
+        FLAGS.data_dir, 'train-00000-of-00001' if self.is_training else 'validation-00000-of-00001')
+    print("YO2",file_pattern)
+    dataset = tf.data.Dataset.list_files(file_pattern)
+    print("YO3", dataset)
+    if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
+      dataset = dataset.shuffle(
+          buffer_size=FLAGS.initial_shuffle_buffer_size)
+    if self.is_training:
+      dataset = dataset.repeat()
 
-    batch_size = params['batch_size']
-
-    dataset = tf.data.Dataset.list_files(self.data_file)
-    print("L77", dataset)
-    dataset = self.make_source_dataset()
-    dataset = dataset.apply(tf.contrib.data.map_and_batch(
-            self.parser, batch_size=batch_size,
-            num_parallel_batches=self.num_cores, drop_remainder=True))
-    print("L79",dataset)
-
-    # Assign static batch size dimension
-    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
-
-    # Prefetch overlaps in-feed with training
-    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-
-    # def prefetch_dataset(filename):
-    #   dataset = tf.data.TFRecordDataset(
-    #       filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
-    #       print("L73",filename)
-    #   print("L74",filename)
-    #   return dataset
+    def prefetch_dataset(filename):
+      dataset = tf.data.TFRecordDataset(
+          filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
+          print("L73",filename)
+      print("L74",filename)
+      return dataset
 
     dataset = dataset.apply(
         tf.contrib.data.parallel_interleave(
@@ -104,9 +84,10 @@ class InputFunction(object):
           buffer_size=FLAGS.followup_shuffle_buffer_size)
 
     # Preprocessing
-    # dataset = dataset.map(
-    #     self.parser,
-    #     num_parallel_calls=FLAGS.num_parallel_calls)
+    batch_size = params['batch_size']
+    dataset = dataset.map(
+        self.parser,
+        num_parallel_calls=FLAGS.num_parallel_calls)
 
     dataset = dataset.prefetch(batch_size)
     dataset = dataset.apply(
@@ -155,17 +136,6 @@ class InputFunction(object):
     image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
     image = tf.transpose(tf.reshape(image, [3, 64*64]))
     return image, label
-
-  # @abc.abstractmethod
-  def make_source_dataset(self):
-    """Makes dataset of serialized TFExamples.
-    The returned dataset will contain `tf.string` tensors, but these strings are
-    serialized `TFExample` records that will be parsed by `dataset_parser`.
-    If self.is_training, the dataset should be infinite.
-    Returns:
-      A `tf.data.Dataset` object.
-    """
-    return
 
 
 def convert_array_to_image(array):
