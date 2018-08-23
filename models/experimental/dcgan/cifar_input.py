@@ -30,6 +30,9 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
 flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
+flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Path to data.')
+flags.DEFINE_integer('initial_shuffle_buffer_size', 1, 'Initial Files to shuffle')
+flags.DEFINE_integer('followup_shuffle_buffer_size', 1, 'Follow Up Files to shuffle')
 
 
 def parser(self, value):
@@ -74,20 +77,48 @@ class InputFunction(object):
     self.use_bfloat16 = use_bfloat16
 
   def __call__(self, params):
-    batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset(self.data_file)
+    # Storage
+    file_pattern = os.path.join(
+        FLAGS.data_dir, 'train-*' if self.is_training else 'validation-*')
+    dataset = tf.data.Dataset.list_files(file_pattern)
+    if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
+      dataset = dataset.shuffle(
+          buffer_size=FLAGS.initial_shuffle_buffer_size)
+    if self.is_training:
+      dataset = dataset.repeat()
+
+    def prefetch_dataset(filename):
+      dataset = tf.data.TFRecordDataset(
+          filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
+      return dataset
+
     dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(
-            self.parser, batch_size=batch_size,
-            num_parallel_batches=self.num_cores, drop_remainder=True))
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+        tf.contrib.data.parallel_interleave(
+            prefetch_dataset,
+            cycle_length=FLAGS.num_files_infeed,
+            sloppy=True))
+    if FLAGS.followup_shuffle_buffer_size > 0:
+      dataset = dataset.shuffle(
+          buffer_size=FLAGS.followup_shuffle_buffer_size)
+
+    # Preprocessing
+    batch_size = params['batch_size']
+    dataset = dataset.map(
+        self.parser,
+        num_parallel_batches=self.num_cores,
+        drop_remainder=True)
+
+    dataset = dataset.prefetch(batch_size)
     dataset = dataset.apply(
         tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
+    dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
     images, labels = dataset.make_one_shot_iterator().get_next()
 
+    # Transfer
+    return images, labels
+
     # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
+    # images = tf.reshape(images, [batch_size, 64, 64, 3])
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
