@@ -60,6 +60,7 @@ class InputFunction(object):
         FLAGS.data_dir, 'train-00000-of-00001' if self.is_training else 'validation-00000-of-00001')
     print("YO2",file_pattern)
     dataset = tf.data.Dataset.list_files(file_pattern)
+    print("YO3", dataset)
     if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
       dataset = dataset.shuffle(
           buffer_size=FLAGS.initial_shuffle_buffer_size)
