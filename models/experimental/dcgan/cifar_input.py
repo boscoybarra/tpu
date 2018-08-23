@@ -39,7 +39,7 @@ flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*4096*4096,'Number of byte
 flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
 
 
-def parser(value):
+def parser(self, value):
   """Parses a single tf.Example into image and label tensors."""
   keys_to_features = {
           'image': tf.FixedLenFeature((), tf.string, ''),
@@ -79,7 +79,7 @@ class InputFunction(object):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.image_size = image_size
     self.use_bfloat16 = use_bfloat16
-    self.parser = parser()
+    self.parser = parser
 
   def __call__(self, params):
     # Storage
