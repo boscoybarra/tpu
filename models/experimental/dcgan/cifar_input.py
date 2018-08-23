@@ -72,6 +72,7 @@ class ImageNetTFExampleInput(object):
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
     self.data_dir = FLAGS.data_dir
+    self.num_replicas = num_replicas
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
