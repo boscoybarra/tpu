@@ -111,7 +111,7 @@ class InputFunction(object):
             'image': tf.FixedLenFeature((), tf.string, ''),
             'label': tf.FixedLenFeature([], tf.int64),
         }
-    print("YOOO",keys_to_features.image)
+    print("YOOO",keys_to_features)
 
     parsed = tf.parse_single_example(value, keys_to_features)
     image_bytes = tf.reshape(parsed['image'], shape=[])
