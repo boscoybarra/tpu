@@ -46,6 +46,8 @@ flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
+  __metaclass__ = abc.ABCMeta
+
   def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
     self.is_training = is_training
     self.noise_dim = noise_dim
@@ -72,8 +74,7 @@ class InputFunction(object):
     batch_size = params['batch_size']
 
     dataset = self.make_source_dataset()
-    dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(
+    dataset = dataset.apply(tf.contrib.data.map_and_batch(
             self.parser, batch_size=batch_size,
             num_parallel_batches=self.num_cores, drop_remainder=True))
     print("L79",dataset)
