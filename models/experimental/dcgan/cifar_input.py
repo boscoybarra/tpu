@@ -34,6 +34,7 @@ flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00
 flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Path to data.')
 flags.DEFINE_integer('initial_shuffle_buffer_size', 1, 'Initial Files to shuffle')
 flags.DEFINE_integer('followup_shuffle_buffer_size', 1, 'Follow Up Files to shuffle')
+flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in parallel.')
 
 
 def parser(self, value):
