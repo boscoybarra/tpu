@@ -70,7 +70,7 @@ def parser(value):
 class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
-  def __init__(self, is_training, noise_dim, use_bfloat16, parser, image_size=64, num_cores=1):
+  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
     self.is_training = is_training
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
