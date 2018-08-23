@@ -73,6 +73,8 @@ class InputFunction(object):
 
     batch_size = params['batch_size']
 
+    dataset = tf.data.Dataset.list_files(self.data_file)
+    print("L77", dataset)
     dataset = self.make_source_dataset()
     dataset = dataset.apply(tf.contrib.data.map_and_batch(
             self.parser, batch_size=batch_size,
