@@ -109,8 +109,7 @@ class InputFunction(object):
     batch_size = params['batch_size']
     dataset = dataset.map(
         parser,
-        num_parallel_calls=FLAGS.num_parallel_calls,
-        drop_remainder=True)
+        num_parallel_calls=FLAGS.num_parallel_calls)
 
     dataset = dataset.prefetch(batch_size)
     dataset = dataset.apply(
