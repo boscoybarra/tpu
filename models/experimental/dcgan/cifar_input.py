@@ -39,32 +39,6 @@ flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*4096*4096,'Number of byte
 flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
 
 
-def parser(self, value):
-  """Parses a single tf.Example into image and label tensors."""
-  keys_to_features = {
-          'image': tf.FixedLenFeature((), tf.string, ''),
-          'label': tf.FixedLenFeature([], tf.int64),
-      }
-
-  parsed = tf.parse_single_example(value, keys_to_features)
-  image_bytes = tf.reshape(parsed['image'], shape=[])
-
-  image = self.image_preprocessing_fn(
-      image_bytes=image_bytes,
-      is_training=self.is_training,
-      image_size=self.image_size,
-      use_bfloat16=self.use_bfloat16)
-
-    # Subtract one so that labels are in [0, 1000).
-  label = tf.cast(
-      tf.reshape(parsed['label'], shape=[]), dtype=tf.int32) - 1
-
-  
-  # image.set_shape([3*64*64])
-  # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  image = tf.transpose(tf.reshape(image, [3, 64*64]))
-  return image, label
 
 
 class InputFunction(object):
@@ -117,8 +91,6 @@ class InputFunction(object):
     dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
     images, labels = dataset.make_one_shot_iterator().get_next()
 
-    # Transfer
-    return images, labels
 
     # Reshape to give inputs statically known shapes.
     # images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -129,7 +101,36 @@ class InputFunction(object):
         'real_images': images,
         'random_noise': random_noise}
 
+    # Transfer
     return features, labels
+
+
+  def parser(self, value):
+    """Parses a single tf.Example into image and label tensors."""
+    keys_to_features = {
+            'image': tf.FixedLenFeature((), tf.string, ''),
+            'label': tf.FixedLenFeature([], tf.int64),
+        }
+
+    parsed = tf.parse_single_example(value, keys_to_features)
+    image_bytes = tf.reshape(parsed['image'], shape=[])
+
+    image = self.image_preprocessing_fn(
+        image_bytes=image_bytes,
+        is_training=self.is_training,
+        image_size=self.image_size,
+        use_bfloat16=self.use_bfloat16)
+
+      # Subtract one so that labels are in [0, 1000).
+    label = tf.cast(
+        tf.reshape(parsed['label'], shape=[]), dtype=tf.int32) - 1
+
+    
+    # image.set_shape([3*64*64])
+    # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
+    image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+    image = tf.transpose(tf.reshape(image, [3, 64*64]))
+    return image, label
 
 
 def convert_array_to_image(array):
