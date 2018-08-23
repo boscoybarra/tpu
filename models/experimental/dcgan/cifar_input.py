@@ -150,7 +150,7 @@ class ImageNetTFExampleInput(object):
     # computed according to the input pipeline deployment. See
     # tf.contrib.tpu.RunConfig for details.
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset(self.data_file)
+    # dataset = tf.data.TFRecordDataset(self.data_file)
 
     dataset = self.make_source_dataset()
 
