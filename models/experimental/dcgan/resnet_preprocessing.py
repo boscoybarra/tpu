@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-IMAGE_SIZE = 224
+IMAGE_SIZE = 64
 CROP_PADDING = 32
 
 

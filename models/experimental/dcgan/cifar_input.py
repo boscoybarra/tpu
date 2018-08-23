@@ -41,83 +41,68 @@ flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel
 
 
 
-class InputFunction(object):
-  """Wrapper class that is passed as callable to Estimator."""
+class ImageNetTFExampleInput(object):
+  """Base class for ImageNet input_fn generator.
 
-  def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
-    self.is_training = is_training
-    self.noise_dim = noise_dim
-    self.data_file = (FLAGS.cifar_train_data_file if is_training
-                      else FLAGS.cifar_test_data_file)
-    self.num_cores = num_cores
+  Args:
+    is_training: `bool` for whether the input is for training
+    use_bfloat16: If True, use bfloat16 precision; else use float32.
+    transpose_input: 'bool' for whether to use the double transpose trick
+    num_cores: `int` for the number of TPU cores
+  """
+  __metaclass__ = abc.ABCMeta
+
+  def __init__(self,
+               is_training,
+               use_bfloat16,
+               num_cores=8,
+               image_size=224,
+               transpose_input=False):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
-    self.image_size = image_size
+    self.is_training = is_training
     self.use_bfloat16 = use_bfloat16
+    self.num_cores = num_cores
+    self.transpose_input = transpose_input
+    self.image_size = image_size
 
-  def __call__(self, params):
-    # Storage
-    file_pattern = os.path.join(
-        FLAGS.data_dir, 'train-00000-of-00001' if self.is_training else 'validation-00000-of-00001')
-    print("YO2",file_pattern)
-    dataset = tf.data.Dataset.list_files(file_pattern)
-    print("YO3", dataset)
-    if self.is_training and FLAGS.initial_shuffle_buffer_size > 0:
-      dataset = dataset.shuffle(
-          buffer_size=FLAGS.initial_shuffle_buffer_size)
-    if self.is_training:
-      dataset = dataset.repeat()
+  def set_shapes(self, batch_size, images, labels):
+    """Statically set the batch_size dimension."""
+    if self.transpose_input:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([None, None, None, batch_size])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+    else:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([batch_size, None, None, None])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
 
-    def prefetch_dataset(filename):
-      dataset = tf.data.TFRecordDataset(
-          filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
-      print("L74",dataset)
-      return dataset
+    return images, labels
 
-    dataset = dataset.apply(
-        tf.contrib.data.parallel_interleave(
-            prefetch_dataset,
-            cycle_length=FLAGS.num_files_infeed,
-            sloppy=True))
-    if FLAGS.followup_shuffle_buffer_size > 0:
-      dataset = dataset.shuffle(
-          buffer_size=FLAGS.followup_shuffle_buffer_size)
+  def dataset_parser(self, value):
+    """Parses an image and its label from a serialized ResNet-50 TFExample.
 
-    # Preprocessing
-    batch_size = params['batch_size']
-    dataset = dataset.map(
-        self.parser,
-        num_parallel_calls=FLAGS.num_parallel_calls)
+    Args:
+      value: serialized string containing an ImageNet TFExample.
 
-    dataset = dataset.prefetch(batch_size)
-    dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)  # Prefetch overlaps in-feed with training
-    images, labels = dataset.make_one_shot_iterator().get_next()
-
-
-    # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
-
-    random_noise = tf.random_normal([batch_size, self.noise_dim])
-
-    features = {
-        'real_images': images,
-        'random_noise': random_noise}
-
-    # Transfer
-    return features, labels
-
-
-  def parser(self, value):
-    """Parses a single tf.Example into image and label tensors."""
+    Returns:
+      Returns a tuple of (image, label) from the TFExample.
+    """
     keys_to_features = {
-            'image': tf.FixedLenFeature((), tf.string),
-            'label': tf.FixedLenFeature([], tf.int64),
-        }
-    print("YOOO",keys_to_features)
+        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
+        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
+        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
+        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
+    }
 
     parsed = tf.parse_single_example(value, keys_to_features)
-    image_bytes = tf.reshape(parsed['image'], shape=[])
+    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
 
     image = self.image_preprocessing_fn(
         image_bytes=image_bytes,
@@ -125,16 +110,91 @@ class InputFunction(object):
         image_size=self.image_size,
         use_bfloat16=self.use_bfloat16)
 
-      # Subtract one so that labels are in [0, 1000).
+    # Subtract one so that labels are in [0, 1000).
     label = tf.cast(
-        tf.reshape(parsed['label'], shape=[]), dtype=tf.int32) - 1
+        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
 
-    
-    # image.set_shape([3*64*64])
-    # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
-    image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-    image = tf.transpose(tf.reshape(image, [3, 64*64]))
     return image, label
+
+  @abc.abstractmethod
+  def make_source_dataset(self):
+    """Makes dataset of serialized TFExamples.
+
+    The returned dataset will contain `tf.string` tensors, but these strings are
+    serialized `TFExample` records that will be parsed by `dataset_parser`.
+
+    If self.is_training, the dataset should be infinite.
+
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    return
+
+  def input_fn(self, params):
+    """Input function which provides a single batch for train or eval.
+
+    Args:
+      params: `dict` of parameters passed from the `TPUEstimator`.
+          `params['batch_size']` is always provided and should be used as the
+          effective batch size.
+
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    # Retrieves the batch size for the current shard. The # of shards is
+    # computed according to the input pipeline deployment. See
+    # tf.contrib.tpu.RunConfig for details.
+    batch_size = params['batch_size']
+
+    dataset = self.make_source_dataset()
+
+    # Use the fused map-and-batch operation.
+    #
+    # For XLA, we must used fixed shapes. Because we repeat the source training
+    # dataset indefinitely, we can use `drop_remainder=True` to get fixed-size
+    # batches without dropping any training examples.
+    #
+    # When evaluating, `drop_remainder=True` prevents accidentally evaluating
+    # the same image twice by dropping the final batch if it is less than a full
+    # batch size. As long as this validation is done with consistent batch size,
+    # exactly the same images will be used.
+    dataset = dataset.apply(
+        tf.contrib.data.map_and_batch(
+            self.dataset_parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
+
+    # Transpose for performance on TPU
+    if self.transpose_input:
+      dataset = dataset.map(
+          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
+          num_parallel_calls=self.num_cores)
+
+    # Assign static batch size dimension
+    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+
+    # Prefetch overlaps in-feed with training
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+
+    # images, labels = dataset.make_one_shot_iterator().get_next()
+
+
+    # # Reshape to give inputs statically known shapes.
+    # images = tf.reshape(images, [batch_size, 64, 64, 3])
+
+    # random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+    # features = {
+    #     'real_images': images,
+    #     'random_noise': random_noise}
+
+    # # Transfer
+    # return features, labels
+
+    return dataset
+    
+
+
+
 
 
 def convert_array_to_image(array):
