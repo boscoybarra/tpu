@@ -38,7 +38,7 @@ flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in
 flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*4096*4096,'Number of bytes in read buffer. 0 means no buffering.')
 
 
-def parser(self, value):
+def parser(value):
   """Parses a single tf.Example into image and label tensors."""
   keys_to_features = {
           'image': tf.FixedLenFeature((), tf.string, ''),
@@ -66,7 +66,7 @@ def parser(self, value):
   return image, label
 
 
-class InputFunction(self, object):
+class InputFunction(object):
   """Wrapper class that is passed as callable to Estimator."""
 
   def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
@@ -107,7 +107,7 @@ class InputFunction(self, object):
     # Preprocessing
     batch_size = params['batch_size']
     dataset = dataset.map(
-        self.parser,
+        parser,
         num_parallel_batches=self.num_cores,
         drop_remainder=True)
 
