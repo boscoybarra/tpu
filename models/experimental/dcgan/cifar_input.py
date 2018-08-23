@@ -70,8 +70,7 @@ class InputFunction(object):
     def prefetch_dataset(filename):
       dataset = tf.data.TFRecordDataset(
           filename, buffer_size=FLAGS.prefetch_dataset_buffer_size)
-          print("L73",filename)
-      print("L74",filename)
+      print("L74",dataset)
       return dataset
 
     dataset = dataset.apply(
