@@ -59,7 +59,9 @@ class ImageNetTFExampleInput(object):
                use_bfloat16=True,
                num_cores=1,
                image_size=64,
-               transpose_input=False):
+               transpose_input=False,
+               num_replicas=None,
+               cache=False,):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
     self.use_bfloat16 = use_bfloat16
@@ -69,6 +71,7 @@ class ImageNetTFExampleInput(object):
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
+    self.data_dir = FLAGS.data_dir
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
@@ -123,17 +126,39 @@ class ImageNetTFExampleInput(object):
 
   
   def make_source_dataset(self):
-    """Makes dataset of serialized TFExamples.
+    """See base class."""
+    if not self.data_dir:
+      tf.logging.info('Undefined data_dir implies null input')
+      return tf.data.Dataset.range(1).repeat().map(self._get_null_input)
 
-    The returned dataset will contain `tf.string` tensors, but these strings are
-    serialized `TFExample` records that will be parsed by `dataset_parser`.
+    # Shuffle the filenames to ensure better randomization.
+    file_pattern = os.path.join(
+        self.data_dir, 'train-*' if self.is_training else 'validation-*')
+    dataset = tf.data.Dataset.list_files(file_pattern, shuffle=self.is_training)
 
-    If self.is_training, the dataset should be infinite.
+    # Shard the data into `num_replicas` parts, get the part for `replica`
+    if self.num_replicas:
+      dataset = dataset.shard(self.num_replicas, self.replica)
 
-    Returns:
-      A `tf.data.Dataset` object.
-    """
-    return
+    if self.is_training and not self.cache:
+      dataset = dataset.repeat()
+
+    def fetch_dataset(filename):
+      buffer_size = 1 * 1024 * 1024  # 8 MiB per file
+      dataset = tf.data.TFRecordDataset(filename, buffer_size=buffer_size)
+      return dataset
+
+    # Read the data from disk in parallel
+    dataset = dataset.apply(
+        tf.contrib.data.parallel_interleave(
+            fetch_dataset, cycle_length=self.num_parallel_calls, sloppy=True))
+
+    if self.cache:
+      dataset = dataset.cache().apply(
+          tf.contrib.data.shuffle_and_repeat(1024 * 16))
+    else:
+      dataset = dataset.shuffle(1024)
+    return dataset
 
   def __call__(self, params):
     """Input function which provides a single batch for train or eval.
