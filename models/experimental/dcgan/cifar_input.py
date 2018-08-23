@@ -131,7 +131,7 @@ class ImageNetTFExampleInput(object):
     """
     return
 
-  def input_fn(self, params):
+  def __call__(self, params):
     """Input function which provides a single batch for train or eval.
 
     Args:
@@ -176,22 +176,20 @@ class ImageNetTFExampleInput(object):
     # Prefetch overlaps in-feed with training
     dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
-    # images, labels = dataset.make_one_shot_iterator().get_next()
+    images, labels = dataset.make_one_shot_iterator().get_next()
 
 
-    # # Reshape to give inputs statically known shapes.
-    # images = tf.reshape(images, [batch_size, 64, 64, 3])
+    # Reshape to give inputs statically known shapes.
+    images = tf.reshape(images, [batch_size, 64, 64, 3])
 
-    # random_noise = tf.random_normal([batch_size, self.noise_dim])
+    random_noise = tf.random_normal([batch_size, self.noise_dim])
 
-    # features = {
-    #     'real_images': images,
-    #     'random_noise': random_noise}
+    features = {
+        'real_images': images,
+        'random_noise': random_noise}
 
-    # # Transfer
-    # return features, labels
-
-    return dataset
+    # Transfer
+    return features, labels
     
 
 
