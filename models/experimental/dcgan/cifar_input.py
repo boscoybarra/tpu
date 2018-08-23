@@ -55,7 +55,7 @@ class ImageNetTFExampleInput(object):
 
   def __init__(self,
                is_training,
-               use_bfloat16,
+               use_bfloat16=True,
                num_cores=1,
                image_size=64,
                transpose_input=False):
