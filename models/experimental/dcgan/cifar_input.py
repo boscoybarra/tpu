@@ -66,7 +66,7 @@ def parser(self, value):
   return image, label
 
 
-class InputFunction(object):
+class InputFunction(self, object):
   """Wrapper class that is passed as callable to Estimator."""
 
   def __init__(self, is_training, noise_dim, use_bfloat16, image_size=64, num_cores=1):
