@@ -79,7 +79,6 @@ class InputFunction(object):
     self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.image_size = image_size
     self.use_bfloat16 = use_bfloat16
-    self.parser = parser
 
   def __call__(self, params):
     # Storage
