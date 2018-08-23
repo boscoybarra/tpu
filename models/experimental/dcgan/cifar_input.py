@@ -74,6 +74,7 @@ class ImageNetTFExampleInput(object):
     self.data_dir = FLAGS.data_dir
     self.num_replicas = num_replicas
     self.cache = cache
+    self.num_parallel_calls = FLAGS.num_parallel_calls
 
   def set_shapes(self, batch_size, images, labels):
     """Statically set the batch_size dimension."""
