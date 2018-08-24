@@ -67,6 +67,7 @@ flags.DEFINE_float('learning_rate', 0.0002, 'LR for both D and G')
 flags.DEFINE_boolean('eval_loss', False,
                      'Evaluate discriminator and generator loss during eval')
 flags.DEFINE_boolean('use_tpu', True, 'Use TPU for training')
+flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Directory where input data is stored.')
 
 _NUM_VIZ_IMAGES = 100   # For generating a 10x10 grid of generator samples
 
@@ -174,7 +175,7 @@ def model_fn(features, labels, mode, params):
 
 def generate_input_fn(is_training):
   """Creates input_fn depending on whether the code is training or not."""
-  return dataset.ImageNetTFExampleInput(is_training, FLAGS.noise_dim, use_bfloat16=False)
+  return dataset.ImageNetTFExampleInput(is_training, FLAGS.noise_dim, use_bfloat16=False, transpose_input=True, data_dir=FLAGS.data_dir)
 
 
 def noise_input_fn(params):

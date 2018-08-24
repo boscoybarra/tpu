@@ -58,9 +58,10 @@ class ImageNetInput(object):
 
   def __init__(self,
                is_training,
+               noise_dim,
                use_bfloat16,
                transpose_input,
-               data_dir=FLAGS.data_dir,
+               data_dir,
                num_parallel_calls=64,
                cache=False,
                num_replicas=None,
@@ -92,6 +93,7 @@ class ImageNetInput(object):
     self.cache = cache
     self.num_replicas = num_replicas
     self.replica = replica
+    self.noise_dim
 
   def _get_null_input(self, data):
     """Returns a null image (all black pixels).
