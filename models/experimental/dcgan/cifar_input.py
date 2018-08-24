@@ -60,7 +60,7 @@ class ImageNetInput(object):
                is_training,
                use_bfloat16,
                transpose_input,
-               data_dir,
+               data_dir=FLAGS.data_dir,
                num_parallel_calls=64,
                cache=False,
                num_replicas=None,
