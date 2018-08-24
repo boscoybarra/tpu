@@ -41,9 +41,135 @@ flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*1024*1024,'Number of byte
 flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
 
 
+class ImageNetTFExampleInput(object):
+  """Base class for ImageNet input_fn generator.
+  Args:
+    is_training: `bool` for whether the input is for training
+    use_bfloat16: If True, use bfloat16 precision; else use float32.
+    transpose_input: 'bool' for whether to use the double transpose trick
+    num_cores: `int` for the number of TPU cores
+  """
+  __metaclass__ = abc.ABCMeta
 
+  def __init__(self,
+               is_training,
+               use_bfloat16,
+               num_cores=8,
+               image_size=224,
+               transpose_input=False):
+    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
+    self.is_training = is_training
+    self.use_bfloat16 = use_bfloat16
+    self.num_cores = num_cores
+    self.transpose_input = transpose_input
+    self.image_size = image_size
 
-class ImageNetInput(object):
+  def set_shapes(self, batch_size, images, labels):
+    """Statically set the batch_size dimension."""
+    if self.transpose_input:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([None, None, None, batch_size])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+    else:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([batch_size, None, None, None])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+
+    return images, labels
+
+  def dataset_parser(self, value):
+    """Parses an image and its label from a serialized ResNet-50 TFExample.
+    Args:
+      value: serialized string containing an ImageNet TFExample.
+    Returns:
+      Returns a tuple of (image, label) from the TFExample.
+    """
+    keys_to_features = {
+        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
+        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
+        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
+        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
+    }
+
+    parsed = tf.parse_single_example(value, keys_to_features)
+    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
+
+    image = self.image_preprocessing_fn(
+        image_bytes=image_bytes,
+        is_training=self.is_training,
+        image_size=self.image_size,
+        use_bfloat16=self.use_bfloat16)
+
+    # Subtract one so that labels are in [0, 1000).
+    label = tf.cast(
+        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
+
+    return image, label
+
+  @abc.abstractmethod
+  def make_source_dataset(self):
+    """Makes dataset of serialized TFExamples.
+    The returned dataset will contain `tf.string` tensors, but these strings are
+    serialized `TFExample` records that will be parsed by `dataset_parser`.
+    If self.is_training, the dataset should be infinite.
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    return
+
+  def input_fn(self, params):
+    """Input function which provides a single batch for train or eval.
+    Args:
+      params: `dict` of parameters passed from the `TPUEstimator`.
+          `params['batch_size']` is always provided and should be used as the
+          effective batch size.
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    # Retrieves the batch size for the current shard. The # of shards is
+    # computed according to the input pipeline deployment. See
+    # tf.contrib.tpu.RunConfig for details.
+    batch_size = params['batch_size']
+
+    dataset = self.make_source_dataset()
+
+    # Use the fused map-and-batch operation.
+    #
+    # For XLA, we must used fixed shapes. Because we repeat the source training
+    # dataset indefinitely, we can use `drop_remainder=True` to get fixed-size
+    # batches without dropping any training examples.
+    #
+    # When evaluating, `drop_remainder=True` prevents accidentally evaluating
+    # the same image twice by dropping the final batch if it is less than a full
+    # batch size. As long as this validation is done with consistent batch size,
+    # exactly the same images will be used.
+    dataset = dataset.apply(
+        tf.contrib.data.map_and_batch(
+            self.dataset_parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
+
+    # Transpose for performance on TPU
+    if self.transpose_input:
+      dataset = dataset.map(
+          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
+          num_parallel_calls=self.num_cores)
+
+    # Assign static batch size dimension
+    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+
+    # Prefetch overlaps in-feed with training
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+    return dataset
+    
+
+class ImageNetInput(ImageNetTFExampleInput):
   """Generates ImageNet input_fn from a series of TFRecord files.
   The training data is assumed to be in TFRecord format with keys as specified
   in the dataset_parser below, sharded across 1024 files, named sequentially:
@@ -60,8 +186,8 @@ class ImageNetInput(object):
                is_training,
                noise_dim,
                use_bfloat16,
+               transpose_input,
                data_dir,
-               transpose_input=False,
                num_parallel_calls=64,
                cache=False,
                num_replicas=None,
