@@ -26,10 +26,10 @@ import tensorflow as tf
 FLAGS = flags.FLAGS
 
 flags.DEFINE_string('mnist_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001', 'Training .tfrecord data file')
-flags.DEFINE_string('mnist_test_data_file', 'gs://ptosis-test/data/train-00000-of-00001', 'Test .tfrecord data file')
+flags.DEFINE_string('mnist_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Test .tfrecord data file')
 
 NUM_TRAIN_IMAGES = 669
-NUM_EVAL_IMAGES = 669
+NUM_EVAL_IMAGES = 335
 
 
 def parser(serialized_example):
