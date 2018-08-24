@@ -43,7 +43,7 @@ flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel
 
 
 
-class ImageNetInput(ImageNetTFExampleInput):
+class ImageNetInput(object):
   """Generates ImageNet input_fn from a series of TFRecord files.
   The training data is assumed to be in TFRecord format with keys as specified
   in the dataset_parser below, sharded across 1024 files, named sequentially:
