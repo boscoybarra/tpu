@@ -39,6 +39,7 @@ flags.DEFINE_integer('followup_shuffle_buffer_size', 0,'Number of elements from 
 flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in parallel.')
 flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*1024*1024,'Number of bytes in read buffer. 0 means no buffering.')
 flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
+flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Directory where input data is stored.')
 
 
 class ImageNetTFExampleInput(object):
@@ -187,7 +188,7 @@ class ImageNetInput(ImageNetTFExampleInput):
                noise_dim,
                use_bfloat16,
                transpose_input,
-               data_dir,
+               data_dir=FLAGS.data_dir,
                num_parallel_calls=64,
                cache=False,
                num_replicas=None,
