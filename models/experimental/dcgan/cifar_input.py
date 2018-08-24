@@ -12,68 +12,206 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Read RESNET data as TFRecords and create a tf.data.Dataset."""
+
+"""CIFAR example using input pipelines."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import abc
 from absl import flags
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+import resnet_preprocessing
+import os
+import functools
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001', 'Training .tfrecord data file')
-flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Test .tfrecord data file')
-
-NUM_TRAIN_IMAGES = 669
-NUM_EVAL_IMAGES = 335
-
-
-def parser(serialized_example):
-  """Parses a single Example into image and label tensors."""
-  features = tf.parse_single_example(
-      serialized_example,
-      features={
-          'image_raw': tf.FixedLenFeature((), tf.string),
-          'label': tf.FixedLenFeature([], tf.int64)   # label is unused
-      })
-  image = tf.decode_raw(features['image_raw'], tf.uint8)
-  image.set_shape([3 * 64 * 64])
-  image = tf.reshape(image, [64, 64, 3])
-
-  # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-
-  label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
-  return image, label
+flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
+                    'Path to CIFAR10 training data.')
+flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
+flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Directory where input data is stored.')
+flags.DEFINE_integer('initial_shuffle_buffer_size', 1024,'Number of elements from dataset that shuffler will sample from. ''This shuffling is done before any other operations. ''Set to 0 to disable')
+flags.DEFINE_integer('followup_shuffle_buffer_size', 0,'Number of elements from dataset that shuffler will sample from. ''This shuffling is done after prefetching is done. ''Set to 0 to disable')
+flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in parallel.')
+flags.DEFINE_integer('prefetch_dataset_buffer_size', 1*1024*1024,'Number of bytes in read buffer. 0 means no buffering.')
+flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel threads in CPU for the input pipeline'))
 
 
-class InputFunction(object):
-  """Wrapper class that is passed as callable to Estimator."""
 
-  def __init__(self, is_training, noise_dim):
+
+class ImageNetTFExampleInput(object):
+  """Base class for ImageNet input_fn generator.
+
+  Args:
+    is_training: `bool` for whether the input is for training
+    use_bfloat16: If True, use bfloat16 precision; else use float32.
+    transpose_input: 'bool' for whether to use the double transpose trick
+    num_cores: `int` for the number of TPU cores
+  """
+  
+
+  def __init__(self,
+               is_training,
+               noise_dim,
+               use_bfloat16,
+               num_cores=1,
+               image_size=64,
+               transpose_input=False,
+               num_replicas=None,
+               cache=False,):
+    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
     self.is_training = is_training
+    self.use_bfloat16 = use_bfloat16
+    self.num_cores = num_cores
+    self.transpose_input = transpose_input
+    self.image_size = image_size
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
+    self.data_dir = FLAGS.data_dir
+    self.num_replicas = num_replicas
+    self.cache = cache
+    self.num_parallel_calls = FLAGS.num_parallel_calls
+
+  def set_shapes(self, batch_size, images, labels):
+    """Statically set the batch_size dimension."""
+    if self.transpose_input:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([None, None, None, batch_size])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+    else:
+      images.set_shape(images.get_shape().merge_with(
+          tf.TensorShape([batch_size, None, None, None])))
+      labels.set_shape(labels.get_shape().merge_with(
+          tf.TensorShape([batch_size])))
+
+    return images, labels
+
+  def dataset_parser(self, value):
+    """Parses an image and its label from a serialized ResNet-50 TFExample.
+
+    Args:
+      value: serialized string containing an ImageNet TFExample.
+
+    Returns:
+      Returns a tuple of (image, label) from the TFExample.
+    """
+    keys_to_features = {
+        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
+        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
+        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
+        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
+    }
+
+    parsed = tf.parse_single_example(value, keys_to_features)
+    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
+
+    image = self.image_preprocessing_fn(
+        image_bytes=image_bytes,
+        is_training=self.is_training,
+        image_size=self.image_size,
+        use_bfloat16=self.use_bfloat16)
+
+    # Subtract one so that labels are in [0, 1000).
+    label = tf.cast(
+        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
+
+    return image, label
+
+  
+  def make_source_dataset(self):
+    """See base class."""
+    if not self.data_dir:
+      tf.logging.info('Undefined data_dir implies null input')
+      return tf.data.Dataset.range(1).repeat().map(self._get_null_input)
+
+    # Shuffle the filenames to ensure better randomization.
+    file_pattern = os.path.join(
+        self.data_dir, 'train-*' if self.is_training else 'validation-*')
+    dataset = tf.data.Dataset.list_files(file_pattern, shuffle=self.is_training)
+
+    # Shard the data into `num_replicas` parts, get the part for `replica`
+    if self.num_replicas:
+      dataset = dataset.shard(self.num_replicas, self.replica)
+
+    if self.is_training and not self.cache:
+      dataset = dataset.repeat()
+
+    def fetch_dataset(filename):
+      buffer_size = 1 * 1024 * 1024  # 8 MiB per file
+      dataset = tf.data.TFRecordDataset(filename, buffer_size=buffer_size)
+      return dataset
+
+    # Read the data from disk in parallel
+    dataset = dataset.apply(
+        tf.contrib.data.parallel_interleave(
+            fetch_dataset, cycle_length=self.num_parallel_calls, sloppy=True))
+
+    if self.cache:
+      dataset = dataset.cache().apply(
+          tf.contrib.data.shuffle_and_repeat(1024 * 16))
+    else:
+      dataset = dataset.shuffle(1024)
+    return dataset
 
   def __call__(self, params):
-    """Creates a simple Dataset pipeline."""
+    """Input function which provides a single batch for train or eval.
 
+    Args:
+      params: `dict` of parameters passed from the `TPUEstimator`.
+          `params['batch_size']` is always provided and should be used as the
+          effective batch size.
+
+    Returns:
+      A `tf.data.Dataset` object.
+    """
+    # Retrieves the batch size for the current shard. The # of shards is
+    # computed according to the input pipeline deployment. See
+    # tf.contrib.tpu.RunConfig for details.
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset(self.data_file)
-    dataset = dataset.map(parser).cache()
-    if self.is_training:
-      dataset = dataset.repeat()
-    dataset = dataset.shuffle(1024)
-    dataset = dataset.prefetch(batch_size)
+    # dataset = tf.data.TFRecordDataset(self.data_file)
+
+    dataset = self.make_source_dataset()
+
+    # Use the fused map-and-batch operation.
+    #
+    # For XLA, we must used fixed shapes. Because we repeat the source training
+    # dataset indefinitely, we can use `drop_remainder=True` to get fixed-size
+    # batches without dropping any training examples.
+    #
+    # When evaluating, `drop_remainder=True` prevents accidentally evaluating
+    # the same image twice by dropping the final batch if it is less than a full
+    # batch size. As long as this validation is done with consistent batch size,
+    # exactly the same images will be used.
     dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)    # Prefetch overlaps in-feed with training
+        tf.contrib.data.map_and_batch(
+            self.dataset_parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
+
+    # Transpose for performance on TPU
+    if self.transpose_input:
+      dataset = dataset.map(
+          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
+          num_parallel_calls=self.num_cores)
+
+    # Assign static batch size dimension
+    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
+
+    # Prefetch overlaps in-feed with training
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+
     images, labels = dataset.make_one_shot_iterator().get_next()
+
 
     # Reshape to give inputs statically known shapes.
     images = tf.reshape(images, [batch_size, 64, 64, 3])
@@ -84,11 +222,15 @@ class InputFunction(object):
         'real_images': images,
         'random_noise': random_noise}
 
+    # Transfer
     return features, labels
+    
+
+
+
 
 
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
-  array = array[:, :, 0]
   img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='RGB')
   return img
