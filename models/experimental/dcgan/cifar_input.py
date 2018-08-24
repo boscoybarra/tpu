@@ -167,7 +167,7 @@ class ImageNetTFExampleInput(object):
     # Prefetch overlaps in-feed with training
     dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
     return dataset
-    
+
 
 class ImageNetInput(ImageNetTFExampleInput):
   """Generates ImageNet input_fn from a series of TFRecord files.
@@ -220,7 +220,6 @@ class ImageNetInput(ImageNetTFExampleInput):
     self.cache = cache
     self.num_replicas = num_replicas
     self.replica = replica
-    self.noise_dim
 
   def _get_null_input(self, data):
     """Returns a null image (all black pixels).
