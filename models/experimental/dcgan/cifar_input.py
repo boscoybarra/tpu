@@ -88,7 +88,7 @@ class ImageNetTFExampleInput(object):
     """
     keys_to_features = {
         'image/encoded': tf.FixedLenFeature((), tf.string, ''),
-        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpg'),
         'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
         'image/class/text': tf.FixedLenFeature([], tf.string, ''),
         'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
