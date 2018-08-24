@@ -33,7 +33,7 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('cifar_train_data_file', 'gs://ptosis-test/data/train-00000-of-00001',
                     'Path to CIFAR10 training data.')
 flags.DEFINE_string('cifar_test_data_file', 'gs://ptosis-test/data/validation-00000-of-00001', 'Path to CIFAR10 test data.')
-flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Directory where input data is stored.')
+# flags.DEFINE_string('data_dir', 'gs://ptosis-test/data/', 'Directory where input data is stored.')
 flags.DEFINE_integer('initial_shuffle_buffer_size', 1024,'Number of elements from dataset that shuffler will sample from. ''This shuffling is done before any other operations. ''Set to 0 to disable')
 flags.DEFINE_integer('followup_shuffle_buffer_size', 0,'Number of elements from dataset that shuffler will sample from. ''This shuffling is done after prefetching is done. ''Set to 0 to disable')
 flags.DEFINE_integer('num_files_infeed', 1, 'Number of training files to read in parallel.')
