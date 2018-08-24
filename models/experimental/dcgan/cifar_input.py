@@ -209,7 +209,6 @@ class ImageNetInput(ImageNetTFExampleInput):
     """
     super(ImageNetInput, self).__init__(
         is_training=is_training,
-        noise_dim = noise_dim,
         use_bfloat16=use_bfloat16,
         transpose_input=transpose_input)
     self.data_dir = data_dir
@@ -220,6 +219,7 @@ class ImageNetInput(ImageNetTFExampleInput):
     self.cache = cache
     self.num_replicas = num_replicas
     self.replica = replica
+    self.noise_dim = noise_dim,
 
   def _get_null_input(self, data):
     """Returns a null image (all black pixels).
