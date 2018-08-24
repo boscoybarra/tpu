@@ -209,7 +209,6 @@ class ImageNetInput(ImageNetTFExampleInput):
     """
     super(ImageNetInput, self).__init__(
         is_training=is_training,
-        noise_dim=noise_dim,
         use_bfloat16=use_bfloat16,
         transpose_input=transpose_input,
         data_dir = data_dir)
