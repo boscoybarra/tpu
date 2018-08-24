@@ -83,7 +83,7 @@ class ImageNetInput(object):
     """
     super(ImageNetInput, self).__init__(
         is_training=is_training,
-        self.noise_dim = noise_dim,
+        noise_dim = noise_dim,
         use_bfloat16=use_bfloat16,
         transpose_input=transpose_input)
     self.data_dir = data_dir
