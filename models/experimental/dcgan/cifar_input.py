@@ -43,92 +43,74 @@ flags.DEFINE_integer('num_parallel_calls', default=64, help=('Number of parallel
 
 
 
-class ImageNetTFExampleInput(object):
-  """Base class for ImageNet input_fn generator.
-
-  Args:
-    is_training: `bool` for whether the input is for training
-    use_bfloat16: If True, use bfloat16 precision; else use float32.
-    transpose_input: 'bool' for whether to use the double transpose trick
-    num_cores: `int` for the number of TPU cores
+class ImageNetInput(ImageNetTFExampleInput):
+  """Generates ImageNet input_fn from a series of TFRecord files.
+  The training data is assumed to be in TFRecord format with keys as specified
+  in the dataset_parser below, sharded across 1024 files, named sequentially:
+      train-00000-of-01024
+      train-00001-of-01024
+      ...
+      train-01023-of-01024
+  The validation data is in the same format but sharded in 128 files.
+  The format of the data required is created by the script at:
+      https://github.com/tensorflow/tpu/blob/master/tools/datasets/imagenet_to_gcs.py
   """
-  
 
   def __init__(self,
                is_training,
-               noise_dim,
                use_bfloat16,
-               num_cores=1,
-               image_size=64,
-               transpose_input=False,
+               transpose_input,
+               data_dir,
+               num_parallel_calls=64,
+               cache=False,
                num_replicas=None,
-               cache=False,):
-    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
-    self.is_training = is_training
-    self.use_bfloat16 = use_bfloat16
-    self.num_cores = num_cores
-    self.transpose_input = transpose_input
-    self.image_size = image_size
-    self.noise_dim = noise_dim
-    self.data_file = (FLAGS.cifar_train_data_file if is_training
-                      else FLAGS.cifar_test_data_file)
-    self.data_dir = FLAGS.data_dir
-    self.num_replicas = num_replicas
+               replica=0):
+    """Create an input from TFRecord files.
+    Args:
+      is_training: `bool` for whether the input is for training
+      use_bfloat16: If True, use bfloat16 precision; else use float32.
+      transpose_input: 'bool' for whether to use the double transpose trick
+      data_dir: `str` for the directory of the training and validation data;
+          if 'null' (the literal string 'null') or implicitly False
+          then construct a null pipeline, consisting of empty images
+          and blank labels.
+      num_parallel_calls: concurrency level to use when reading data from disk.
+      cache: if true, fill the dataset by repeating from its cache
+      num_replicas: `int` for the number of model replicas this dataset should
+          be sharded onto, or `None` if this dataset should not be sharded.
+      replica: `int` for the replica that input_fn should produce data for
+    """
+    super(ImageNetInput, self).__init__(
+        is_training=is_training,
+        use_bfloat16=use_bfloat16,
+        transpose_input=transpose_input)
+    self.data_dir = data_dir
+    # TODO(b/112427086):  simplify the choice of input source
+    if self.data_dir == 'null' or not self.data_dir:
+      self.data_dir = None
+    self.num_parallel_calls = num_parallel_calls
     self.cache = cache
-    self.num_parallel_calls = FLAGS.num_parallel_calls
+    self.num_replicas = num_replicas
+    self.replica = replica
 
-  def set_shapes(self, batch_size, images, labels):
-    """Statically set the batch_size dimension."""
-    if self.transpose_input:
-      images.set_shape(images.get_shape().merge_with(
-          tf.TensorShape([None, None, None, batch_size])))
-      labels.set_shape(labels.get_shape().merge_with(
-          tf.TensorShape([batch_size])))
-    else:
-      images.set_shape(images.get_shape().merge_with(
-          tf.TensorShape([batch_size, None, None, None])))
-      labels.set_shape(labels.get_shape().merge_with(
-          tf.TensorShape([batch_size])))
-
-    return images, labels
+  def _get_null_input(self, data):
+    """Returns a null image (all black pixels).
+    Args:
+      data: element of a dataset, ignored in this method, since it produces
+          the same null image regardless of the element.
+    Returns:
+      a tensor representing a null image.
+    """
+    del data  # Unused since output is constant regardless of input
+    return tf.zeros([224, 224, 3], tf.bfloat16
+                    if self.use_bfloat16 else tf.float32)
 
   def dataset_parser(self, value):
-    """Parses an image and its label from a serialized ResNet-50 TFExample.
+    """See base class."""
+    if not self.data_dir:
+      return value, tf.constant(0, tf.int32)
+    return super(ImageNetInput, self).dataset_parser(value)
 
-    Args:
-      value: serialized string containing an ImageNet TFExample.
-
-    Returns:
-      Returns a tuple of (image, label) from the TFExample.
-    """
-    keys_to_features = {
-        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
-        'image/format': tf.FixedLenFeature((), tf.string, 'jpeg'),
-        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
-        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
-        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
-        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
-    }
-
-    parsed = tf.parse_single_example(value, keys_to_features)
-    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
-
-    image = self.image_preprocessing_fn(
-        image_bytes=image_bytes,
-        is_training=self.is_training,
-        image_size=self.image_size,
-        use_bfloat16=self.use_bfloat16)
-
-    # Subtract one so that labels are in [0, 1000).
-    label = tf.cast(
-        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
-
-    return image, label
-
-  
   def make_source_dataset(self):
     """See base class."""
     if not self.data_dir:
@@ -148,7 +130,7 @@ class ImageNetTFExampleInput(object):
       dataset = dataset.repeat()
 
     def fetch_dataset(filename):
-      buffer_size = 1 * 1024 * 1024  # 8 MiB per file
+      buffer_size = 8 * 1024 * 1024  # 8 MiB per file
       dataset = tf.data.TFRecordDataset(filename, buffer_size=buffer_size)
       return dataset
 
@@ -162,53 +144,6 @@ class ImageNetTFExampleInput(object):
           tf.contrib.data.shuffle_and_repeat(1024 * 16))
     else:
       dataset = dataset.shuffle(1024)
-    return dataset
-
-  def __call__(self, params):
-    """Input function which provides a single batch for train or eval.
-
-    Args:
-      params: `dict` of parameters passed from the `TPUEstimator`.
-          `params['batch_size']` is always provided and should be used as the
-          effective batch size.
-
-    Returns:
-      A `tf.data.Dataset` object.
-    """
-    # Retrieves the batch size for the current shard. The # of shards is
-    # computed according to the input pipeline deployment. See
-    # tf.contrib.tpu.RunConfig for details.
-    batch_size = params['batch_size']
-    # dataset = tf.data.TFRecordDataset(self.data_file)
-
-    dataset = self.make_source_dataset()
-
-    # Use the fused map-and-batch operation.
-    #
-    # For XLA, we must used fixed shapes. Because we repeat the source training
-    # dataset indefinitely, we can use `drop_remainder=True` to get fixed-size
-    # batches without dropping any training examples.
-    #
-    # When evaluating, `drop_remainder=True` prevents accidentally evaluating
-    # the same image twice by dropping the final batch if it is less than a full
-    # batch size. As long as this validation is done with consistent batch size,
-    # exactly the same images will be used.
-    dataset = dataset.apply(
-        tf.contrib.data.map_and_batch(
-            self.dataset_parser, batch_size=batch_size,
-            num_parallel_batches=self.num_cores, drop_remainder=True))
-
-    # Transpose for performance on TPU
-    if self.transpose_input:
-      dataset = dataset.map(
-          lambda images, labels: (tf.transpose(images, [1, 2, 3, 0]), labels),
-          num_parallel_calls=self.num_cores)
-
-    # Assign static batch size dimension
-    dataset = dataset.map(functools.partial(self.set_shapes, batch_size))
-
-    # Prefetch overlaps in-feed with training
-    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
 
     images, labels = dataset.make_one_shot_iterator().get_next()
 
