@@ -51,23 +51,22 @@ flags.DEFINE_string(
 # Model specific paramenters
 flags.DEFINE_string('dataset', 'cifar',
                     'One of ["mnist", "cifar"]. Requires additional flags')
-flags.DEFINE_string('model_dir', 'gs://ptosis-test/dcgan', 'Output model directory')
+flags.DEFINE_string('model_dir', '', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,
                      'Number of dimensions for the noise vector')
-flags.DEFINE_integer('batch_size', 4096,
+flags.DEFINE_integer('batch_size', 1024,
                      'Batch size for both generator and discriminator')
-flags.DEFINE_integer('num_shards', None, 'Number of TPU chips')
-flags.DEFINE_integer('train_steps', 1000, 'Number of training steps')
-flags.DEFINE_integer('train_steps_per_eval', 100,
+flags.DEFINE_integer('num_shards', 1, 'Number of TPU chips')
+flags.DEFINE_integer('train_steps', 10000, 'Number of training steps')
+flags.DEFINE_integer('train_steps_per_eval', 1000,
                      'Steps per eval and image generation')
-flags.DEFINE_integer('iterations_per_loop', 10,
+flags.DEFINE_integer('iterations_per_loop', 100,
                      'Steps per interior TPU loop. Should be less than'
                      ' --train_steps_per_eval')
 flags.DEFINE_float('learning_rate', 0.0002, 'LR for both D and G')
-flags.DEFINE_boolean('eval_loss', False,
+flags.DEFINE_boolean('eval_loss', True,
                      'Evaluate discriminator and generator loss during eval')
 flags.DEFINE_boolean('use_tpu', True, 'Use TPU for training')
-flags.DEFINE_bool('transpose_input', default=True,help='Use TPU double transpose optimization')
 
 _NUM_VIZ_IMAGES = 100   # For generating a 10x10 grid of generator samples
 
@@ -180,14 +179,11 @@ def generate_input_fn(is_training):
 
 def noise_input_fn(params):
   """Input function for generating samples for PREDICT mode.
-
   Generates a single Tensor of fixed random noise. Use tf.data.Dataset to
   signal to the estimator when to terminate the generator returned by
   predict().
-
   Args:
     params: param `dict` passed by TPUEstimator.
-
   Returns:
     1-element `dict` containing the randomly generated noise.
   """
@@ -279,4 +275,3 @@ def main(argv):
 
 if __name__ == '__main__':
   tf.logging.set_verbosity(tf.logging.INFO)
-  tf.app.run(main)
