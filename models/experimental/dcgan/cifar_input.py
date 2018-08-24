@@ -207,10 +207,10 @@ class ImageNetInput(ImageNetTFExampleInput):
           be sharded onto, or `None` if this dataset should not be sharded.
       replica: `int` for the replica that input_fn should produce data for
     """
-    super(ImageNetInput, self).__init__(
-        is_training=is_training,
-        use_bfloat16=use_bfloat16,
-        transpose_input=transpose_input)
+    # super(ImageNetInput, self).__init__(
+    #     is_training=is_training,
+    #     use_bfloat16=use_bfloat16,
+    #     transpose_input=transpose_input)
     self.data_dir = data_dir
     # TODO(b/112427086):  simplify the choice of input source
     if self.data_dir == 'null' or not self.data_dir:
