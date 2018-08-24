@@ -210,8 +210,7 @@ class ImageNetInput(ImageNetTFExampleInput):
     super(ImageNetInput, self).__init__(
         is_training=is_training,
         use_bfloat16=use_bfloat16,
-        transpose_input=transpose_input,
-        data_dir = data_dir)
+        transpose_input=transpose_input)
     self.data_dir = data_dir
     # TODO(b/112427086):  simplify the choice of input source
     if self.data_dir == 'null' or not self.data_dir:
