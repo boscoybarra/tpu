@@ -57,7 +57,6 @@ def parser(serialized_example):
   """Parses a single Example into image and label tensors."""
   reader = tf.TFRecordReader()
   filenames = glob2.glob('/home/jb/tpu/output.tfrecords')
-  # filenames = tf.gfile.Glob('gs://ptosis-test/data/output.tfrecords')
   filename_queue = tf.train.string_input_producer(
      filenames)
   _, serialized_example = reader.read(filename_queue)
@@ -95,8 +94,8 @@ class InputFunction(object):
     """Creates a simple Dataset pipeline."""
 
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset('/home/jb/tpu/output.tfrecords')
-    
+    filenames = ["/home/jb/tpu/output.tfrecords"]
+    dataset = tf.data.TFRecordDataset(filenames)
     dataset = dataset.map(parser).cache()
     if self.is_training:
       dataset = dataset.repeat()
