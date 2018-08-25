@@ -67,7 +67,7 @@ def parser(serialized_example):
   label = features['label']
    
   with tf.Session() as sess:
-    print sess.run([image,label])
+    print(sess.run([image,label]))
 
   # image.set_shape([3 * 64 * 64])
   # image = tf.reshape(image, [64, 64, 3])
