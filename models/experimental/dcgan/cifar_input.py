@@ -56,7 +56,8 @@ NUM_EVAL_IMAGES = 669
 def parser(serialized_example):
   """Parses a single Example into image and label tensors."""
   reader = tf.TFRecordReader()
-  filenames = glob2.glob('gs://ptosis-test/data/output.tfrecords')
+  # filenames = glob2.glob('gs://ptosis-test/data/output.tfrecords')
+  filenames = tf.gfile.Glob('gs://ptosis-test/data/output.tfrecords')
   filename_queue = tf.train.string_input_producer(
      filenames)
   _, serialized_example = reader.read(filename_queue)
