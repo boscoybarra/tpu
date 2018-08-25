@@ -97,4 +97,3 @@ def generator(x, is_training=True, scope='Generator'):
     return x
 
 # TODO(chrisying): objective score (e.g. MNIST score)
-

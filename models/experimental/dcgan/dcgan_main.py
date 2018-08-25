@@ -49,14 +49,14 @@ flags.DEFINE_string(
     'will attempt to automatically detect the GCE project from metadata.')
 
 # Model specific paramenters
-flags.DEFINE_string('dataset', 'cifar',
+flags.DEFINE_string('dataset', 'mnist',
                     'One of ["mnist", "cifar"]. Requires additional flags')
 flags.DEFINE_string('model_dir', '', 'Output model directory')
 flags.DEFINE_integer('noise_dim', 64,
                      'Number of dimensions for the noise vector')
 flags.DEFINE_integer('batch_size', 1024,
                      'Batch size for both generator and discriminator')
-flags.DEFINE_integer('num_shards', 1, 'Number of TPU chips')
+flags.DEFINE_integer('num_shards', None, 'Number of TPU chips')
 flags.DEFINE_integer('train_steps', 100, 'Number of training steps')
 flags.DEFINE_integer('train_steps_per_eval', 10,
                      'Steps per eval and image generation')
