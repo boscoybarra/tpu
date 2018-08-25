@@ -176,8 +176,8 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('mnist_train_data_file', '/home/jb/tpu/output.tfrecords', 'Training .tfrecord data file')
-flags.DEFINE_string('mnist_test_data_file', '/home/jb/tpu/output.tfrecords', 'Test .tfrecord data file')
+flags.DEFINE_string('cifar_train_data_file', '/home/jb/tpu/output.tfrecords', 'Training .tfrecord data file')
+flags.DEFINE_string('cifar_test_data_file', '/home/jb/tpu/output.tfrecords', 'Test .tfrecord data file')
 
 NUM_TRAIN_IMAGES = 669
 NUM_EVAL_IMAGES = 669
