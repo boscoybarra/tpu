@@ -11,6 +11,7 @@ feature_set = { 'image': tf.FixedLenFeature([], tf.string),
            
 features = tf.parse_single_example( serialized_example, features= feature_set )
 label = features['label']
+image = features['image']
  
 with tf.Session() as sess:
   print sess.run([image,label])
