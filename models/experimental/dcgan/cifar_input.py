@@ -133,6 +133,6 @@ class InputFunction(object):
 
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
-  array = array[:, :, 0]
-  img = Image.fromarray(tf.uint8((array + 1.0) / 2.0 * 255), mode='RGB')
+  # array = array[:, :, 0]
+  img = Image.fromarray(array, mode='RGB')
   return img
