@@ -58,7 +58,7 @@ def parser(serialized_example):
   reader = tf.TFRecordReader()
   filenames = glob2.glob('/home/jb/tpu/output.tfrecords')
   # filenames = "/home/jb/tpu/output.tfrecords"
-    dataset = tf.data.TFRecordDataset(filenames)
+  # dataset = tf.data.TFRecordDataset(filenames)
   filename_queue = tf.train.string_input_producer(
      filenames)
   _, serialized_example = reader.read(filename_queue)
