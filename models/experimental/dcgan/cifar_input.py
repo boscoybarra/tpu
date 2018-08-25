@@ -122,7 +122,7 @@ class InputFunction(object):
     dataset = dataset.map(parser)
     dataset = dataset.shuffle(buffer_size=669)
     dataset = dataset.batch(32)
-    dataset = dataset.repeat(num_epochs)
+    dataset = dataset.repeat(5)
     iterator = dataset.make_one_shot_iterator()
 
     # `features` is a dictionary in which each value is a batch of values for
