@@ -95,7 +95,8 @@ class InputFunction(object):
     """Creates a simple Dataset pipeline."""
 
     batch_size = params['batch_size']
-    # dataset = tf.data.TFRecordDataset(self.data_file)
+    dataset = tf.data.TFRecordDataset('/home/jb/tpu/output.tfrecords')
+    
     dataset = dataset.map(parser).cache()
     if self.is_training:
       dataset = dataset.repeat()
