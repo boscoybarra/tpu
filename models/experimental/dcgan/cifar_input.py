@@ -96,24 +96,39 @@ class InputFunction(object):
     """Creates a simple Dataset pipeline."""
 
     batch_size = params['batch_size']
-    filenames = "/home/jb/tpu/output.tfrecords"
+    filenames = ["/home/jb/tpu/output.tfrecords", "/home/jb/tpu/output.tfrecords"]
     dataset = tf.data.TFRecordDataset(filenames)
-    dataset = dataset.map(parser).cache()
-    if self.is_training:
-      dataset = dataset.repeat()
-    dataset = dataset.shuffle(1024)
-    dataset = dataset.prefetch(batch_size)
-    dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)    # Prefetch overlaps in-feed with training
-    images, labels = dataset.make_one_shot_iterator().get_next()
 
-    random_noise = tf.random_normal([batch_size, self.noise_dim])
+    # Use `tf.parse_single_example()` to extract data from a `tf.Example`
+    # protocol buffer, and perform any additional per-record preprocessing.
+    def parser(record):
+      keys_to_features = {
+          "image_data": tf.FixedLenFeature((), tf.string, default_value=""),
+          "date_time": tf.FixedLenFeature((), tf.int64, default_value=""),
+          "label": tf.FixedLenFeature((), tf.int64,
+                                      default_value=tf.zeros([], dtype=tf.int64)),
+      }
+      parsed = tf.parse_single_example(record, keys_to_features)
 
-    features = {
-        'real_images': images,
-        'random_noise': random_noise}
+      # Perform additional preprocessing on the parsed data.
+      image = tf.image.decode_jpeg(parsed["image_data"])
+      image = tf.reshape(image, [64, 64, 3])
+      label = tf.cast(parsed["label"], tf.int32)
+      random_noise = tf.random_normal([batch_size, self.noise_dim])
 
+      return {"real_images": image, 'random_noise': random_noise, "date_time": parsed["date_time"]}, label
+
+    # Use `Dataset.map()` to build a pair of a feature dictionary and a label
+    # tensor for each example.
+    dataset = dataset.map(parser)
+    dataset = dataset.shuffle(buffer_size=669)
+    dataset = dataset.batch(32)
+    dataset = dataset.repeat(num_epochs)
+    iterator = dataset.make_one_shot_iterator()
+
+    # `features` is a dictionary in which each value is a batch of values for
+    # that feature; `labels` is a batch of labels.
+    features, labels = iterator.get_next()
     return features, labels
 
 
