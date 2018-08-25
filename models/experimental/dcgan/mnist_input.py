@@ -28,8 +28,8 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('mnist_train_data_file', '', 'Training .tfrecord data file')
 flags.DEFINE_string('mnist_test_data_file', '', 'Test .tfrecord data file')
 
-NUM_TRAIN_IMAGES = 669
-NUM_EVAL_IMAGES = 669
+NUM_TRAIN_IMAGES = 14
+NUM_EVAL_IMAGES = 14
 
 
 def parser(serialized_example):
