@@ -60,8 +60,6 @@ def _deconv2d(x, filters, kernel_size, stride, name):
 
 def discriminator(x, is_training=True, scope='Discriminator'):
   with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-    print("HEELLOO?",x)
-    print("HEELLOO 2?",x.shape)
     x = _conv2d(x, 64, 5, 2, name='d_conv1')
     x = _leaky_relu(x)
 
@@ -72,45 +70,26 @@ def discriminator(x, is_training=True, scope='Discriminator'):
     x = _leaky_relu(_batch_norm(x, is_training, name='d_bn3'))
 
     x = tf.reshape(x, [-1, 4 * 4 * 256])
-    print("HEELLOO 74?",x)
-    print("HEELLOO 76?",x.shape)
 
     x = _dense(x, 1, name='d_fc_4')
-    print("HEELLOO 79?",x)
-    print("HEELLOO 80?",x.shape)
 
     return x
 
 
 def generator(x, is_training=True, scope='Generator'):
   with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
-    print("HEELLOO 87",x)
-    print("HEELLOO 88?",x.shape)
     x = _dense(x, 4096, name='g_fc1')
-    print("HEELLOO 90",x)
-    print("HEELLOO 91?",x.shape)
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn1'))
 
-    print("HEELLOO 94",x)
-    print("HEELLOO 95?",x.shape)
     x = tf.reshape(x, [-1, 4, 4, 256])
-    print("HEELLOO 97",x)
-    print("HEELLOO 98?",x.shape)
 
-    x = _deconv2d(x, 128, 5, 4, name='g_dconv2')
+    x = _deconv2d(x, 128, 5, 2, name='g_dconv2')
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn2'))
-    print("HEELLOO 102",x)
-    print("HEELLOO 103?",x.shape)
 
     x = _deconv2d(x, 64, 4, 2, name='g_dconv3')
     x = tf.nn.relu(_batch_norm(x, is_training, name='g_bn3'))
-    print("HEELLOO 107",x)
-    print("HEELLOO 108?",x.shape)
 
     x = _deconv2d(x, 3, 4, 2, name='g_dconv4')
     x = tf.tanh(x)
-    print("HEELLOO 112",x)
-    print("HEELLOO 113?",x.shape)
 
     return x
-
