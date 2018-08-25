@@ -53,34 +53,34 @@ NUM_EVAL_IMAGES = 669
 #   label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
 #   return image, label
 
-def parser(serialized_example):
-  """Parses a single Example into image and label tensors."""
-  reader = tf.TFRecordReader()
-  # filenames = glob2.glob('/home/jb/tpu/output.tfrecords')
-  filenames = "/home/jb/tpu/output.tfrecords"
-  # dataset = tf.data.TFRecordDataset(filenames)
-  filename_queue = tf.train.string_input_producer(
-     filenames)
-  _, serialized_example = reader.read(filename_queue)
-  feature_set = { 'image': tf.FixedLenFeature([], tf.string),
-                 'label': tf.FixedLenFeature([], tf.int64)
-             }
+# def parser(serialized_example):
+#   """Parses a single Example into image and label tensors."""
+#   reader = tf.TFRecordReader()
+#   # filenames = glob2.glob('/home/jb/tpu/output.tfrecords')
+#   filenames = "/home/jb/tpu/output.tfrecords"
+#   # dataset = tf.data.TFRecordDataset(filenames)
+#   filename_queue = tf.train.string_input_producer(
+#      filenames)
+#   _, serialized_example = reader.read(filename_queue)
+#   feature_set = { 'image': tf.FixedLenFeature([], tf.string),
+#                  'label': tf.FixedLenFeature([], tf.int64)
+#              }
              
-  features = tf.parse_single_example( serialized_example, features= feature_set )
-  label = features['label']
-  image = features['image']
-  print("L71",image)
+#   features = tf.parse_single_example( serialized_example, features= feature_set )
+#   label = features['label']
+#   image = features['image']
+#   print("L71",image)
    
-  # with tf.Session() as sess:
-  #   print(sess.run([image,label]))
+#   # with tf.Session() as sess:
+#   #   print(sess.run([image,label]))
 
-  image.set_shape([3 * 64 * 64])
-  image = tf.reshape(image, [64, 64, 3])
+#   image.set_shape([3 * 64 * 64])
+#   image = tf.reshape(image, [64, 64, 3])
 
-  # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+#   # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
+#   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
 
-  return image, label
+#   return image, label
 
 
 class InputFunction(object):
