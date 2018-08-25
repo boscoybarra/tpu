@@ -114,11 +114,9 @@ class InputFunction(object):
       # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
       image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
       image = tf.transpose(tf.reshape(image, [3, 64*64]))
-      image = tf.reshape(image, [64, 64, 3])
       label = tf.cast(parsed["label"], tf.int32)
-      random_noise = tf.random_normal([batch_size, self.noise_dim])
 
-      return {"real_images": image, 'random_noise': random_noise}, label
+      return image, label
 
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
@@ -130,7 +128,17 @@ class InputFunction(object):
 
     # `features` is a dictionary in which each value is a batch of values for
     # that feature; `labels` is a batch of labels.
-    features, labels = iterator.get_next()
+    image, labels = iterator.get_next()
+
+    # Reshape to give inputs statically known shapes.
+    image = tf.reshape(images, [batch_size, 64, 64, 3])
+
+    random_noise = tf.random_normal([batch_size, self.noise_dim])
+
+    features = {
+        'real_images': image,
+        'random_noise': random_noise}
+
     return features, labels
 
 
