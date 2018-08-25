@@ -111,7 +111,6 @@ class InputFunction(object):
 
       # Perform additional preprocessing on the parsed data.
       image = tf.image.decode_jpeg(parsed["real_images"])
-      image.set_shape([3*64*64])
       # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
       image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
       image = tf.transpose(tf.reshape(image, [3, 64*64]))
