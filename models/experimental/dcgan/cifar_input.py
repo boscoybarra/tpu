@@ -103,20 +103,19 @@ class InputFunction(object):
     # protocol buffer, and perform any additional per-record preprocessing.
     def parser(record):
       keys_to_features = {
-          "image_data": tf.FixedLenFeature((), tf.string, default_value=""),
-          "date_time": tf.FixedLenFeature((), tf.int64, default_value=""),
+          "real_images": tf.FixedLenFeature((), tf.string, default_value=""),
           "label": tf.FixedLenFeature((), tf.int64,
                                       default_value=tf.zeros([], dtype=tf.int64)),
       }
       parsed = tf.parse_single_example(record, keys_to_features)
 
       # Perform additional preprocessing on the parsed data.
-      image = tf.image.decode_jpeg(parsed["image_data"])
+      image = tf.image.decode_jpeg(parsed["real_images"])
       image = tf.reshape(image, [64, 64, 3])
       label = tf.cast(parsed["label"], tf.int32)
       random_noise = tf.random_normal([batch_size, self.noise_dim])
 
-      return {"real_images": image, 'random_noise': random_noise, "date_time": parsed["date_time"]}, label
+      return {"real_images": image, 'random_noise': random_noise}, label
 
     # Use `Dataset.map()` to build a pair of a feature dictionary and a label
     # tensor for each example.
