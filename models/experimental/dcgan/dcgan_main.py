@@ -57,10 +57,10 @@ flags.DEFINE_integer('noise_dim', 64,
 flags.DEFINE_integer('batch_size', 1024,
                      'Batch size for both generator and discriminator')
 flags.DEFINE_integer('num_shards', None, 'Number of TPU chips')
-flags.DEFINE_integer('train_steps', 10, 'Number of training steps')
-flags.DEFINE_integer('train_steps_per_eval', 5,
+flags.DEFINE_integer('train_steps', 1000, 'Number of training steps')
+flags.DEFINE_integer('train_steps_per_eval', 100,
                      'Steps per eval and image generation')
-flags.DEFINE_integer('iterations_per_loop', 1,
+flags.DEFINE_integer('iterations_per_loop', 10,
                      'Steps per interior TPU loop. Should be less than'
                      ' --train_steps_per_eval')
 flags.DEFINE_float('learning_rate', 0.0002, 'LR for both D and G')
