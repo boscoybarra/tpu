@@ -131,7 +131,7 @@ class InputFunction(object):
     image, labels = iterator.get_next()
 
     # Reshape to give inputs statically known shapes.
-    image = tf.reshape(images, [batch_size, 64, 64, 3])
+    image = tf.reshape(image, [batch_size, 64, 64, 3])
 
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
