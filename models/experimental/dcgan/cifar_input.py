@@ -32,24 +32,49 @@ NUM_TRAIN_IMAGES = 669
 NUM_EVAL_IMAGES = 669
 
 
+# def parser(serialized_example):
+#   """Parses a single Example into image and label tensors."""
+#   features = tf.parse_single_example(
+#       serialized_example,
+#       features={
+#           'image_raw': tf.FixedLenFeature([], tf.string),
+#           'label': tf.FixedLenFeature([], tf.int64)   # label is unused
+#       })
+#   image = tf.decode_raw(features['image_raw'], tf.uint8)
+#   image.set_shape([3 * 64 * 64])
+#   image = tf.reshape(image, [64, 64, 3])
+
+#   # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
+#   image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+
+#   # image = tf.transpose(tf.reshape(image, [3, 32*32]))
+
+#   label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
+#   return image, label
+
 def parser(serialized_example):
   """Parses a single Example into image and label tensors."""
-  features = tf.parse_single_example(
-      serialized_example,
-      features={
-          'image_raw': tf.FixedLenFeature([], tf.string),
-          'label': tf.FixedLenFeature([], tf.int64)   # label is unused
-      })
-  image = tf.decode_raw(features['image_raw'], tf.uint8)
-  image.set_shape([3 * 64 * 64])
-  image = tf.reshape(image, [64, 64, 3])
+  reader = tf.TFRecordReader()
+  filenames = glob.glob('gs://ptosis-test/data/output.tfrecords')
+  filename_queue = tf.train.string_input_producer(
+     filenames)
+  _, serialized_example = reader.read(filename_queue)
+  feature_set = { 'image': tf.FixedLenFeature([], tf.string),
+                 'label': tf.FixedLenFeature([], tf.int64)
+             }
+             
+  features = tf.parse_single_example( serialized_example, features= feature_set )
+  label = features['label']
+   
+  with tf.Session() as sess:
+    print sess.run([image,label])
 
-  # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+  # image.set_shape([3 * 64 * 64])
+  # image = tf.reshape(image, [64, 64, 3])
 
-  # image = tf.transpose(tf.reshape(image, [3, 32*32]))
+  # # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
+  # image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
 
-  label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
   return image, label
 
 
