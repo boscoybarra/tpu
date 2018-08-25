@@ -46,7 +46,7 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-tfrecord_filename = '/Users/jb/Desktop/output.tfrecords'
+tfrecord_filename = '/Users/jb/Desktop/output2.tfrecords'
 
 # Initiating the writer and creating the tfrecords file.
 
@@ -55,11 +55,11 @@ writer = tf.python_io.TFRecordWriter(tfrecord_filename)
 # Loading the location of all files - image dataset
 # Considering our image dataset has apple or orange
 # The images are named as apple01.jpg, apple02.jpg .. , orange01.jpg .. etc.
-
 images = glob.glob('/Users/jb/Desktop/pics/*.jpg')
+# images = glob.glob('/Users/jb/Documents/dl/deepicasso/picasso/*.jpg')
 for image in images[:1]:
   img = Image.open(image)
-  img = np.array(img.resize((32,32)))
+  img = np.array(img.resize((64,64)))
 label = 0 if '64' in image else 1
 feature = { 'label': _int64_feature(label),
               'image': _bytes_feature(img.tostring()) }

@@ -42,11 +42,12 @@ def parser(serialized_example):
       })
   image = tf.decode_raw(features['image_raw'], tf.uint8)
   image.set_shape([3 * 64 * 64])
-
-    # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
-  
   image = tf.reshape(image, [64, 64, 3])
+
+  # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
+  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+
+  # image = tf.transpose(tf.reshape(image, [3, 32*32]))
 
   label = tf.cast(tf.reshape(features['label'], shape=[]), dtype=tf.int32)
   return image, label
@@ -58,8 +59,8 @@ class InputFunction(object):
   def __init__(self, is_training, noise_dim):
     self.is_training = is_training
     self.noise_dim = noise_dim
-    self.data_file = (FLAGS.cifar_train_data_file if is_training
-                      else FLAGS.cifar_test_data_file)
+    self.data_file = (FLAGS.mnist_train_data_file if is_training
+                      else FLAGS.mnist_test_data_file)
 
   def __call__(self, params):
     """Creates a simple Dataset pipeline."""
@@ -76,9 +77,6 @@ class InputFunction(object):
     dataset = dataset.prefetch(2)    # Prefetch overlaps in-feed with training
     images, labels = dataset.make_one_shot_iterator().get_next()
 
-    # Reshape to give inputs statically known shapes.
-    images = tf.reshape(images, [batch_size, 64, 64, 3])
-
     random_noise = tf.random_normal([batch_size, self.noise_dim])
 
     features = {
@@ -91,5 +89,5 @@ class InputFunction(object):
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
   array = array[:, :, 0]
-  img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='RGB')
+  img = Image.fromarray(np.uint8((array + 1.0) / 2.0 * 255), mode='L')
   return img
