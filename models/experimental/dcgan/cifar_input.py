@@ -68,6 +68,7 @@ def parser(serialized_example):
   features = tf.parse_single_example( serialized_example, features= feature_set )
   label = features['label']
   image = features['image']
+  print(image)
    
   # with tf.Session() as sess:
   #   print(sess.run([image,label]))
@@ -94,7 +95,7 @@ class InputFunction(object):
     """Creates a simple Dataset pipeline."""
 
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset(self.data_file)
+    # dataset = tf.data.TFRecordDataset(self.data_file)
     dataset = dataset.map(parser).cache()
     if self.is_training:
       dataset = dataset.repeat()
