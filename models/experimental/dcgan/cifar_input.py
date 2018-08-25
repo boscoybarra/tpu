@@ -26,9 +26,9 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', '',
+flags.DEFINE_string('cifar_train_data_file', '/home/oasiss20/tpu/cifar10-ready.bin',
                     'Path to CIFAR10 training data.')
-flags.DEFINE_string('cifar_test_data_file', '', 'Path to CIFAR10 test data.')
+flags.DEFINE_string('cifar_test_data_file', '/home/oasiss20/tpu/cifar10-ready.bin', 'Path to CIFAR10 test data.')
 
 
 def parser(serialized_example):
