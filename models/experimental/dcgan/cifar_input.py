@@ -188,7 +188,7 @@ def parser(serialized_example):
   features = tf.parse_single_example(
       serialized_example,
       features={
-          'image_raw': tf.FixedLenFeature([], tf.string),
+          'image_raw': tf.FixedLenFeature((), tf.string),
           'label': tf.FixedLenFeature([], tf.int64)   # label is unused
       })
   image = tf.decode_raw(features['image_raw'], tf.uint8)
