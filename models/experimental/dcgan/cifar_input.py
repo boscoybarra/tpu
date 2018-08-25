@@ -111,6 +111,8 @@ class InputFunction(object):
 
       # Perform additional preprocessing on the parsed data.
       image = tf.image.decode_jpeg(parsed["real_images"])
+      # Normalize the values of the image from the range [0, 255] to [-1.0, 1.0]
+      image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
       image = tf.reshape(image, [64, 64, 3])
       label = tf.cast(parsed["label"], tf.int32)
       random_noise = tf.random_normal([batch_size, self.noise_dim])
@@ -133,6 +135,5 @@ class InputFunction(object):
 
 def convert_array_to_image(array):
   """Converts a numpy array to a PIL Image and undoes any rescaling."""
-  # array = array[:, :, 0]
-  img = Image.fromarray(array, mode='RGB')
+  img = Image.fromarray(tf.float32((array + 1.0) / 2.0 * 255), mode='RGB')
   return img
