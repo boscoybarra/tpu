@@ -72,11 +72,11 @@ def parser(serialized_example):
   # with tf.Session() as sess:
   #   print(sess.run([image,label]))
 
-  # image.set_shape([3 * 64 * 64])
-  # image = tf.reshape(image, [64, 64, 3])
+  image.set_shape([3 * 64 * 64])
+  image = tf.reshape(image, [64, 64, 3])
 
-  # # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
-  # image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
+  # Normalize the values of the image from [0, 255] to [-1.0, 1.0]
+  image = tf.cast(image, tf.float32) * (2.0 / 255) - 1.0
 
   return image, label
 
