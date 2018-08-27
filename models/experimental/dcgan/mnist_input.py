@@ -25,8 +25,8 @@ import tensorflow as tf
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('mnist_train_data_file', '/home/jb/tpu/train-images-idx3-ubyte.gz', 'Training .tfrecord data file')
-flags.DEFINE_string('mnist_test_data_file', '/home/jb/tpu/test-images-idx3-ubyte.gz', 'Test .tfrecord data file')
+flags.DEFINE_string('mnist_train_data_file', '', 'Training .tfrecord data file')
+flags.DEFINE_string('mnist_test_data_file', '', 'Test .tfrecord data file')
 
 NUM_TRAIN_IMAGES = 4000
 NUM_EVAL_IMAGES = 2000

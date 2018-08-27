@@ -19,8 +19,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-IMAGE_SIZE = 64
-CROP_PADDING = 32
+IMAGE_SIZE = 32
+CROP_PADDING = 16
 
 
 def distorted_bounding_box_crop(image_bytes,

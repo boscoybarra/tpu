@@ -23,13 +23,46 @@ from absl import flags
 import numpy as np
 from PIL import Image
 import tensorflow as tf
+import resnet_preprocessing
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('cifar_train_data_file', '/home/oasiss20/tpu/cifar10-ready.bin',
+flags.DEFINE_string('cifar_train_data_file', '',
                     'Path to CIFAR10 training data.')
-flags.DEFINE_string('cifar_test_data_file', '/home/oasiss20/tpu/cifar10-ready.bin', 'Path to CIFAR10 test data.')
+flags.DEFINE_string('cifar_test_data_file', '', 'Path to CIFAR10 test data.')
 
+
+def dataset_parser(serialized_example):
+    """Parses an image and its label from a serialized ResNet-50 TFExample.
+    Args:
+      value: serialized string containing an ImageNet TFExample.
+    Returns:
+      Returns a tuple of (image, label) from the TFExample.
+    """
+    keys_to_features = {
+        'image/encoded': tf.FixedLenFeature((), tf.string, ''),
+        'image/format': tf.FixedLenFeature((), tf.string, 'jpg'),
+        'image/class/label': tf.FixedLenFeature([], tf.int64, -1),
+        'image/class/text': tf.FixedLenFeature([], tf.string, ''),
+        'image/object/bbox/xmin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymin': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
+        'image/object/class/label': tf.VarLenFeature(dtype=tf.int64),
+    }
+
+    parsed = tf.parse_single_example(value, keys_to_features)
+    image_bytes = tf.reshape(parsed['image/encoded'], shape=[])
+
+    image = self.image_preprocessing_fn(
+        image_bytes=image_bytes,
+        is_training=self.is_training)
+
+    # Subtract one so that labels are in [0, 1000).
+    label = tf.cast(
+        tf.reshape(parsed['image/class/label'], shape=[]), dtype=tf.int32) - 1
+
+    return image, label
 
 def parser(serialized_example):
   """Parses a single tf.Example into image and label tensors."""
@@ -56,15 +89,51 @@ class InputFunction(object):
     self.noise_dim = noise_dim
     self.data_file = (FLAGS.cifar_train_data_file if is_training
                       else FLAGS.cifar_test_data_file)
+    self.image_preprocessing_fn = resnet_preprocessing.preprocess_image
 
   def __call__(self, params):
     batch_size = params['batch_size']
-    dataset = tf.data.TFRecordDataset([self.data_file])
-    dataset = dataset.map(parser, num_parallel_calls=batch_size)
-    dataset = dataset.prefetch(4 * batch_size).cache().repeat()
+    if not self.data_dir:
+      tf.logging.info('Undefined data_dir implies null input')
+      return tf.data.Dataset.range(1).repeat().map(self._get_null_input)
+
+    # Shuffle the filenames to ensure better randomization.
+    file_pattern = os.path.join(
+        self.data_dir, 'gs://ptosis-test/tpu/dcgan/data/train-*' if self.is_training else 'gs://ptosis-test/tpu/dcgan/data/validation-*')
+    dataset = tf.data.Dataset.list_files(file_pattern, shuffle=self.is_training)
+
+    # Shard the data into `num_replicas` parts, get the part for `replica`
+    if self.num_replicas:
+      dataset = dataset.shard(self.num_replicas, self.replica)
+
+    if self.is_training and not self.cache:
+      dataset = dataset.repeat()
+
+    def fetch_dataset(filename):
+      buffer_size = 8 * 1024 * 1024  # 8 MiB per file
+      dataset = tf.data.TFRecordDataset(filename, buffer_size=buffer_size)
+      return dataset
+
+    # Read the data from disk in parallel
     dataset = dataset.apply(
-        tf.contrib.data.batch_and_drop_remainder(batch_size))
-    dataset = dataset.prefetch(2)
+        tf.contrib.data.parallel_interleave(
+            fetch_dataset, cycle_length=self.num_parallel_calls, sloppy=True))
+
+    if self.cache:
+      dataset = dataset.cache().apply(
+          tf.contrib.data.shuffle_and_repeat(1024 * 16))
+    else:
+      dataset = dataset.shuffle(1024)
+
+    dataset = dataset.apply(
+        tf.contrib.data.map_and_batch(
+            self.dataset_parser, batch_size=batch_size,
+            num_parallel_batches=self.num_cores, drop_remainder=True))
+
+
+    # Prefetch overlaps in-feed with training
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+
     images, labels = dataset.make_one_shot_iterator().get_next()
 
     # Reshape to give inputs statically known shapes.

@@ -6,25 +6,28 @@ from scipy.sparse import csr_matrix
 import glob
 
 
-# images = []
-# labels = []
+images = []
+labels = []
 
 
-# dirs = os.listdir('/Users/jb/Documents/dl/tpu/models/experimental/dcgan/data/pics/')
+dirs = os.listdir('/Users/jb/Documents/dl/deepicasso/picasso/')
 
-# for d in dirs[0:669]:
-#     # im = ('/Users/jb/Documents/dl/tpu/models/experimental/dcgan/data/pics/{}'.format(d))
-#     im = ('gs://ptosis-test/data/{}'.format(d))
-#     images.append(im)
-#     print(len(images))
+for d in dirs[0:825]:
+    im = ('/Users/jb/Documents/dl/deepicasso/picasso/{}'.format(d))
+    # im = ('gs://ptosis-test/data/{}'.format(d))
+    images.append(im)
+    print(len(images))
     
-# print(images)
+print(images)
 
-# for l in range(669):
+# for l in range(825):
 #     l += 0
 #     labels.append(l)
 #     print(labels)
 #     print(len(labels))
+
+
+
 
 # convert_to(images, labels, 'output')
 
@@ -35,44 +38,44 @@ import glob
 
 
 
-# Converting the values into features
-# _int64 is used for numeric values
+# # Converting the values into features
+# # _int64 is used for numeric values
 
-def _int64_feature(value):
-    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
+# def _int64_feature(value):
+#     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
-# _bytes is used for string/char values
+# # _bytes is used for string/char values
 
-def _bytes_feature(value):
-    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
+# def _bytes_feature(value):
+#     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-tfrecord_filename = '/Users/jb/Desktop/output2.tfrecords'
+# tfrecord_filename = '/Users/jb/Desktop/output2.tfrecords'
 
-# Initiating the writer and creating the tfrecords file.
+# # Initiating the writer and creating the tfrecords file.
 
-writer = tf.python_io.TFRecordWriter(tfrecord_filename)
+# writer = tf.python_io.TFRecordWriter(tfrecord_filename)
 
-# Loading the location of all files - image dataset
-# Considering our image dataset has apple or orange
-# The images are named as apple01.jpg, apple02.jpg .. , orange01.jpg .. etc.
-images = glob.glob('/Users/jb/Desktop/pics/*.jpg')
-# images = glob.glob('/Users/jb/Documents/dl/deepicasso/picasso/*.jpg')
-for image in images[:1]:
-  img = Image.open(image)
-  img = np.array(img.resize((64,64)))
-label = 0 if '64' in image else 1
-feature = { 'label': _int64_feature(label),
-              'image': _bytes_feature(img.tostring()) }
+# # Loading the location of all files - image dataset
+# # Considering our image dataset has apple or orange
+# # The images are named as apple01.jpg, apple02.jpg .. , orange01.jpg .. etc.
+# images = glob.glob('/Users/jb/Desktop/pics/*.jpg')
+# # images = glob.glob('/Users/jb/Documents/dl/deepicasso/picasso/*.jpg')
+# for image in images[:1]:
+#   img = Image.open(image)
+#   img = np.array(img.resize((64,64)))
+# label = 0 if '64' in image else 1
+# feature = { 'label': _int64_feature(label),
+#               'image': _bytes_feature(img.tostring()) }
 
-# Create an example protocol buffer
+# # Create an example protocol buffer
 
-example = tf.train.Example(features=tf.train.Features(feature=feature))
+# example = tf.train.Example(features=tf.train.Features(feature=feature))
 
-# Writing the serialized example.
+# # Writing the serialized example.
 
-writer.write(example.SerializeToString())
+# writer.write(example.SerializeToString())
 
-writer.close()
+# writer.close()
 
 
 ### So to read it back, the process is reversed.
